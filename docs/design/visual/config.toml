@@ -1,0 +1,61 @@
+# Proposed Streamlit theme for "Resilience Rewired". The UI build copies this to app/.streamlit/config.toml.
+# Design source: docs/design/visual/tokens.md. Streamlit 1.64 option names checked against streamlit.config.
+# Light only, fixed: base = "light" so a dark-mode projector or OS cannot flip the app.
+
+[server]
+enableStaticServing = true          # serves app/static/* at /app/static/* (Figtree files)
+
+[theme]
+base = "light"
+primaryColor = "#C84B0C"            # Tangerine orange darkened for white-label contrast 4.70:1 (brand #F2691D is 3.08:1)
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F7F6F6"
+textColor = "#3A3835"
+linkColor = "#006BCE"
+linkUnderline = true
+borderColor = "#8B857B"             # widget borders: 3.66:1 on white (WCAG 1.4.11 needs 3:1)
+showWidgetBorder = true
+dataframeBorderColor = "#E9E8E5"
+dataframeHeaderBackgroundColor = "#F0F0EF"
+
+# Status palette (Streamlit uses these for delta arrows, st.error, etc.)
+greenColor = "#1B6B3A"
+redColor = "#B3261E"
+orangeColor = "#C84B0C"
+blueColor = "#006BCE"
+
+# Type: Figtree (SIL OFL), self-hosted. Files the build must place in app/static/ (not downloaded here):
+#   Figtree-Regular.woff2 (400), Figtree-Medium.woff2 (500), Figtree-Bold.woff2 (700)
+font = "Figtree, Arial, Helvetica, sans-serif"
+headingFont = "Figtree, Arial, Helvetica, sans-serif"
+baseFontSize = 20                   # projection: 20px body, not the brand's 16px
+baseFontWeight = 400
+headingFontSizes = ["36px", "32px", "28px", "24px", "22px", "20px"]
+headingFontWeights = [700, 700, 700, 700, 700, 700]
+metricValueFontSize = "48px"
+metricValueFontWeight = 700
+
+# Shape: pill buttons, 16px cards and inputs. Pixel values on purpose: rem would scale with baseFontSize 20.
+baseRadius = "16px"
+buttonRadius = "full"
+
+# Native charts only; Altair/Vega charts in charts.md set colours explicitly.
+chartCategoricalColors = ["#006BCE", "#F2691D"]
+
+[[theme.fontFaces]]
+family = "Figtree"
+url = "app/static/Figtree-Regular.woff2"
+weight = 400
+style = "normal"
+
+[[theme.fontFaces]]
+family = "Figtree"
+url = "app/static/Figtree-Medium.woff2"
+weight = 500
+style = "normal"
+
+[[theme.fontFaces]]
+family = "Figtree"
+url = "app/static/Figtree-Bold.woff2"
+weight = 700
+style = "normal"
