@@ -23,4 +23,5 @@ def runway_from(buffer_left, gap):
 
 
 def money(value):
-    return f"-${abs(value):,.0f}" if value < 0 else f"${value:,.0f}"
+    whole = round(value, 0) + 0.0
+    return f"-${abs(whole):,.0f}" if whole < 0 else f"${whole:,.0f}"

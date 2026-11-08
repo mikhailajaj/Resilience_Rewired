@@ -4,7 +4,7 @@ Low fidelity. Streamlit parts named in [brackets]. Reading order is top to botto
 
 ## Page structure
 
-This file covers the Shock and plan page. The second page, Customer profiling, is described in [`customer_profiling.md`](../../customer_profiling.md). Region A sits above both pages.
+This file covers the Shock and plan page and, in section T, the Chat page. The Customer profiling page is described in [`customer_profiling.md`](../../customer_profiling.md). Region A sits above every page.
 
 ```
 +--------------------------------------------------------------------------+
@@ -15,6 +15,7 @@ This file covers the Shock and plan page. The second page, Customer profiling, i
 | E. Our numbers                   (labelled, directly below D)             |
 | F. Goal plan  |  G. Backup plan                                           |
 | H. Details [st.expander, closed]: charts, tables, customer notes          |
+| P. Plan designer                 (bottom; ticks open each plan, J5)       |
 +--------------------------------------------------------------------------+
 ```
 
@@ -303,6 +304,75 @@ Target: default 3 (owner), slider 1 to 12 plus number box (any value).
 
 ---
 
+## P. Plan designer (J5)
+
+Below H, above the footer. No shock (RU-11). Keys are in [copy §11](copy.md#11-plan-designer-p); use-case steps in [`use_cases_plan.md`](../../inception/use_cases_plan.md). Values: 20111, from the inception script.
+
+### P1. Rates and checkboxes (J5 1 to 3)
+
+```
+ Plan designer                                   {P.cap}
+ {P.rates}   Actual change, last 12 months   -$748 a month   (headline)
+             Judges' typical month (I - S)   -$2,260 a month
+             Lean months (ours)              +$604 a month
+ [ ] Savings goal   [ ] Time off work   [ ] Emergency budget   [st.checkbox x3]
+```
+
+### P2. Savings goal open (J5.1)
+
+```
+ [x] Savings goal   Name [ car ]  Amount [ 60000 ]  Deadline, months [ 24 ]  Interest % a year [ 0 ]
+ {P.g_needed}  $8,187 to finish the emergency fund first, then $60,000 for the car.
+ {P.g_months}  Actual change: never at this rate. 115 months counting the loan ending in month 36 (ours).
+               Judges' typical month: never at this rate.   Lean months (ours): 113 months; 52 counting the loan.
+ {P.g_deadline} To have it in 24 months, save $2,841 a month.
+ {P.g_cut}     That needs $3,589 a month less spending: 57% of the $6,269 above fixed costs, more than the
+               $2,864 the lean-quarter level would save.
+```
+
+### P3. Time off and emergency open (J5.2, J5.3)
+
+```
+ [x] Time off work   Months off [ 24 ]
+ {P.o_amount}  24 months off at typical spending: $206,391. At lean spending: $137,643 (ours).
+ {P.o_now}     Not saved by month 120, so this checks starting now.
+ {P.o_out}     With no income for 24 months from month 0, the money runs out in month 3 of the time off.
+ [x] Emergency budget   Cost [ 10000 ]
+ {P.e_left_ok} The buffer covers it: $7,612 is left.
+```
+
+32078, cost $10,000 (instant budget): `{P.e_left_no}` "The buffer can't cover it: -$12,513 left." then `{P.e_budget}` with the backup steps (1. find $12,513 to get back to $0) and "Lean budget: $1,346 a month", then `{P.e_rebuild}` per rate.
+
+### P4. Timeline (J5.4)
+
+```
+ {P.tl_head}
+ $ |            ___/  lean (ours)          markers: F fund reached, G goal reached, B bought,
+   |   ___/----'                           O time off start/end, E emergency, L loan paid off
+   |--+---------L-----------------> month  [st.altair_chart, one line per rate, up to 120]
+ [ Show as a table ]  {P.tl_table}         [st.dataframe: Month, one column per rate, Event]
+```
+
+### P5. Loan lines (J5.1 5d, 5e; J3 5b)
+
+```
+ {P.loan_line}   113 months; 52 counting the loan ending in month 36 (ours).
+ {P.loan_d}      (status D only) The loan is behind, so month N is scheduled, not certain.
+```
+
+| Element | Use-case steps |
+| :-- | :-- |
+| Rates block | J5 1; J5.1 5, 5a, 5b |
+| Checkboxes and inputs | J5 2, 2a; J5.1 1, 2, 2a to 2c; J5.2 1, 1a; J5.3 1, 1a |
+| Goal lines | J5.1 4 to 6, 4a to 4c, 5c to 5h, 6a to 6c, 7a |
+| Time-off lines | J5.2 2 to 4, 3a, 4a, 4b |
+| Emergency lines | J5.3 2, 3, 2a, 3a, 3b |
+| Timeline, table | J5 4; J5.4 1 to 3, 1a, 2a, 2b; J5.1 7 |
+| Plain lines under P1 | J5 1b to 1d, 3a, 4b |
+| Loan lines | J5 4a; J5.1 5d, 5e; J3 5b |
+
+Accessibility: the table view holds every charted value and marker; markers are letters as well as colours.
+
 ## Accessibility behaviour (all screens)
 
 | Topic | Behaviour |
@@ -315,3 +385,59 @@ Target: default 3 (owner), slider 1 to 12 plus number box (any value).
 | Status without colour | Words ("down", "Selected", "runs out in month 4"), not colour, carry the status |
 | Targets | Buttons full-width in their column, so large touch/click areas |
 | Projection | Body text no smaller than st.metric label; headline numbers largest on the page |
+
+---
+
+## T. Chat page (J4)
+
+A third page in [st.navigation], `{T.page}`, below region A. Messages are [st.chat_message] ("assistant" and "user"), history is in session state, and the text box is [st.chat_input]. Only the latest assistant message has live buttons (RU-19). Sample figures are the engine's output for 20111 on 2026-11-07.
+
+```
++--------------------------------------------------------------------------+
+| A. Customer picker (shared)                                               |
+| Chat                                         [ Download transcript ]      |
+| (bot) {T.greet} {K.summary_line}                                          |
+|       {T.range}: Data from 2022-11 to 2025-12 (38 months).                |
+|       - No regular bills visible in the transactions.   (up to 3 notes)   |
+|       {T.pick}                                                            |
+|       [Job loss on EI] [Bills go up] [Surprise repair] [Mix] [Type it]    |
+| ...                                                                       |
+| [ Type the twist card, or a size ...                              ] [>]   |
++--------------------------------------------------------------------------+
+```
+
+States, each drawn in the message area above:
+
+```
+T1 No customer   (bot) {T.no_customer}         no buttons; picker shows any error
+T2 Greeting      as drawn above
+T3 In progress   (you) Job loss on EI   (you) 55%
+                 (bot) {T.ask_months}  [6 months] [12 months] [Until it runs out]
+                       Other: [ 1 to 120 ] [Use]
+T4 Result        (bot) ⚙ engine call: apply_shock(20111, Shock(income_cut=IncomeCut(0.55, 6)))
+                       ✕ With income at 55% for 6 months, the money runs out in month 4,
+                         about 2.6 months short.  The judges' runway is 3.4 months.
+                       Runway 7.8 months -> 3.4 months. Monthly gap $2,260 -> $5,113.
+                       (fact lines, assumption line, one "(ours)" line if it applies)
+                       [Show the backup plan] [Show the goal plan] [Add another shock]
+                       [Change the size] [New customer] [Send to the controls]
+T5 Parse confirm (you) laid off, EI 55% for 6 months and bills up 15%
+                 (bot) {T.confirm}  [Run it] [No, use buttons]
+T6 Error         (bot) {T.out_of_range} | {T.not_number} | {T.unsure} | {T.send_cant}
+                       then the buttons of the step being asked
+```
+
+| Element | Use-case steps |
+| :-- | :-- |
+| T1 no-customer line | J4 1a, J4.1 1b, J4.3 1d, 1d1 |
+| T2 greeting, notes, twist buttons | J4 1, 1b, 1c, 1d, 4a; J4.1 1, 1a, 6a; J4.2 4a; J4.4 1a, 1c |
+| T3 size question and buttons | J4.1 2, 3, 4; J4.2 2a, 2f; J4.3 1b, 1c |
+| T4 engine call line | J4.1 5, 6; J4.3 2 |
+| T4 result sentences | J4.1 7, 3c, 7a to 7h; J4.2 5a |
+| T4 plan lines | J4.3 3, 3a, 3b, 3c, 1a, 1a1, 1a2, 1e |
+| T4 follow-up buttons | J4.1 8; J4.3 1, 4 |
+| T5 confirm | J4.2 3, 4, 4b |
+| T6 error line | J4 2a; J4.1 3a, 3b, 3d, 6b; J4.2 2b, 2c, 2d; J4.3 1e1 |
+| Download button | J4.4 1, 2 |
+
+No screen: J4.2 2e (blank text is ignored) and J4.4 1b (inside the file). Focus: after each click, focus goes to [st.chat_input]. Buttons wrap onto a second row on a narrow window.

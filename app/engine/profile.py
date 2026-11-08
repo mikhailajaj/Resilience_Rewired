@@ -229,14 +229,28 @@ def account_id_range():
     return AccountIdRange(min(ids), max(ids), len(ids))
 
 
+_COMMA_GROUPED = re.compile(r"[0-9]{1,3}(,[0-9]{3})+")
+_WHOLE_FLOAT = re.compile(r"[0-9]+\.0+")
+
+
 def parse_account_id(value):
     text = str(value).strip()
-    if isinstance(value, bool) or not re.fullmatch(r"[0-9]+", text):
+    if isinstance(value, bool):
+        digits = None
+    elif _COMMA_GROUPED.fullmatch(text):
+        digits = text.replace(",", "")
+    elif _WHOLE_FLOAT.fullmatch(text):
+        digits = text.split(".")[0]
+    elif re.fullmatch(r"[0-9]+", text):
+        digits = text
+    else:
+        digits = None
+    if digits is None:
         raise InvalidAccountIdError(value, "not_digits", f"'{text[:20]}' isn't an account ID. IDs are whole numbers, like 20111.")
     # The length check keeps int() safe on absurdly long input.
-    if len(text) > 18 or int(text) not in get_dataset().rows_by_account:
+    if len(digits) > 18 or int(digits) not in get_dataset().rows_by_account:
         raise InvalidAccountIdError(value, "not_found", f"Account {text[:20]} isn't in the data. IDs are whole numbers, like 20111.")
-    return int(text)
+    return int(digits)
 
 
 def get_profile(account_id):

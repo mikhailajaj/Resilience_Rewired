@@ -4,7 +4,7 @@ import html
 import streamlit as st
 
 from app.engine import EI_WEEKLY_MAX_2026, IncomeCut, Shock, account_flows, apply_shock, get_profile, make_plan, monthly_history
-from app.ui import charts, text
+from app.ui import charts, cheatsheet, plan_designer, text
 from app.ui.shared import caption, md, raw
 
 PAIRS = {  # name: (label, slider low, slider high, slider step, box low, box high)
@@ -123,6 +123,8 @@ def pair(name, help_line, disabled=False):
 def region_c(result):
     st.header("Pick a twist", anchor=False)
     caption("Or type your own sizes below.")
+    with st.expander("Cheatsheet: how to type a twist card in the chat"):
+        st.markdown(cheatsheet.markdown())
     inp, selected = inputs(), selected_name()
     cols = st.columns(len(PRESETS) + 1)
     for col, (name, values) in zip(cols, PRESETS):
@@ -131,6 +133,8 @@ def region_c(result):
                    on_click=apply_preset, args=(values,), width="stretch")
     cols[-1].button(RESET_NAME, key="preset_reset", type="tertiary", on_click=apply_preset, args=(RESET,), width="stretch")
     st.markdown(f"**Selected: {selected}**" if selected else "**Custom**")
+    if selected == "Laid off + bills up 15%":
+        caption(text.ASSUMED_LENGTH)
 
     no_cut = inp["income"] >= 100
     left, right = st.columns(2, gap="large")
@@ -150,8 +154,9 @@ def region_c(result):
         months.slider("One-off cost (months of spending)", 0.0, 3.0, step=0.25, key="w_oneoff_months", on_change=from_single, args=("oneoff_months",), format="%g")
         dollars.number_input("One-off cost ($)", 0.0, 100000.0, step=100.0, key="w_oneoff_dollars", on_change=from_single, args=("oneoff_dollars",), format="%g")
         caption("Paid once, at the start. Using one clears the other.")
-        if result.one_off > 0:
-            md(f"**Total one-off: {text.money(result.one_off)}**")
+        line = text.oneoff_line(result)
+        if line:
+            md(line)
         with st.expander("More options"):
             st.selectbox("Shock starts in", MONTH_NAMES, key="w_start", on_change=from_single, args=("start",))
             caption("Optional. Spending is higher in January and June. This never changes the judges' runway.")
@@ -295,4 +300,5 @@ with goal:
 with backup:
     region_g(plan)
 region_h(profile)
-caption("Data: PKDD'99 Discovery Challenge Financial dataset. Method notes are in the docs folder.")
+plan_designer.section(profile)
+caption(text.FOOTER)

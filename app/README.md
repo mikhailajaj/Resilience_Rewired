@@ -1,9 +1,11 @@
 # Resilience Rewired app
 
-A two-page Streamlit app over the engine in `engine/`. The customer picker sits above both pages and keeps one customer across them.
+A four-page Streamlit app over the engine in `engine/`. The customer picker sits above the pages and keeps one customer across them.
 
-- **Shock and plan:** type any `account_id`, apply a shock, and get a goal plan and a backup plan.
+- **Shock and plan:** type any `account_id`, apply a shock, and get a goal plan and a backup plan. Below them, the plan designer ("If you adjust") lets you change saving, loan end and the goal and see the date move.
+- **Chat:** a guided conversation that runs a twist on the loaded customer, by buttons or a typed card.
 - **Customer profiling:** everything on file for the customer, and [questions to ask the stakeholder](../docs/customer_profiling.md).
+- **Findings:** what the data shows across all accounts, with the customer's own numbers beside it.
 
 ## Run it
 
@@ -19,8 +21,10 @@ cd app
 Run from the `Tangerine` folder.
 
 ```bash
-.venv/bin/python -m pytest app/tests
+.venv/bin/python -m pytest app/tests -q -p no:cacheprovider
 ```
+
+The suite collects 1,214 tests.
 
 ## Layout
 
@@ -29,6 +33,9 @@ Run from the `Tangerine` folder.
 | `streamlit_app.py` | Navigation, theme CSS, engine start-up and the customer picker |
 | `app_pages/shock_and_plan.py` | Input state and layout, regions B to H from [`wireframes.md`](../docs/design/ux/wireframes.md) |
 | `app_pages/customer_profiling.py` | The profile tabs and the questionnaire |
+| `app_pages/findings.py` | The Findings page |
+| `ui/plan_designer.py` | The plan designer section on Shock and plan |
+| `app_pages/assistant.py` | The Chat page: draws the state from `assistant/flow.py`, sends clicks and typed lines back |
 | `ui/shared.py` | Text helpers and the picker, used by both pages |
 | `ui/profile_view.py` | The rows on the profiling page |
 | `ui/questionnaire.py` | Which questions each customer gets, and the Markdown download |

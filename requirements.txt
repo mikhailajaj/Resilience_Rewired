@@ -1,0 +1,8 @@
+-r app/requirements.txt
+matplotlib
+scipy
+ipykernel
+nbformat
+nbconvert
+jupyterlab
+pytest
