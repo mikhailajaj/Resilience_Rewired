@@ -1,4 +1,4 @@
-"""Take a shock. The judges' runway follows the README exactly; everything else sits beside it."""
+"""Take a shock. The standard (judges') runway follows the README exactly; everything else sits beside it."""
 import math
 from dataclasses import dataclass, replace
 from numbers import Integral, Real
@@ -38,7 +38,7 @@ class IncomeCut:
     keep_fraction: float = EI_KEEP
     months: int | None = None
     after_ends: str = "no_income"
-    ei_weekly_max: float | None = None   # dollars a week. None is off, which is the judges' flat rate
+    ei_weekly_max: float | None = None   # dollars a week. None is off, which is the standard (judges') flat rate
 
     def __post_init__(self):
         if self.ei_weekly_max is not None:
@@ -167,7 +167,7 @@ class ExtraFigure:
 
 @dataclass(frozen=True)
 class CappedFigure:
-    """Runway with the EI weekly maximum. Our addition, beside the judges' number."""
+    """Runway with the EI weekly maximum. Our addition, beside the standard (judges') number."""
     label: str
     available: bool
     reason: str               # max_applied, max_not_reached or no_income_cut
@@ -272,7 +272,7 @@ def _capped_figure(p, shock, spending_after, buffer_left, months):
     gap_during, gap_after, benefit = shock_gaps(p, shock, spending_after, income)
     duration = None if months is None else duration_path(buffer_left, gap_during, gap_after, benefit, months, cut.after_ends)
     note = (f"Income is held at {money(monthly)} a month, the {money(weekly)} weekly maximum. This treats typical money in as insurable earnings."
-            if applied else f"{money(flat)} a month is within the {money(weekly)} weekly maximum, so this equals the judges' number.")
+            if applied else f"{money(flat)} a month is within the {money(weekly)} weekly maximum, so this equals the standard (judges') number.")
     return CappedFigure(available=True, reason="max_applied" if applied else "max_not_reached", max_applied=applied, income_after=income,
                         effective_share_of_income=income / p.I if p.I > 0 else None, gap=gap, runway=runway_from(buffer_left, gap),
                         duration=duration, note=note, **common)
@@ -293,10 +293,10 @@ def _bills_figure(p, shock, spending_after, income_after, buffer_left):
     if shock.bills_increase_pct == 0:
         return ExtraFigure(label, False, "no_bills_shock", None, None, False, "There's no bills increase in this shock.", {})
     if not p.bills_hidden:
-        return ExtraFigure(label, False, "bills_not_missing", None, None, False, "Standing orders don't show more bills than H, so the judges' figure already fits.", {})
+        return ExtraFigure(label, False, "bills_not_missing", None, None, False, "Standing orders don't show more bills than H, so the standard (judges') figure already fits.", {})
     basis = max(p.H, p.bills_on_standing_orders)
     spending = max(spending_after + shock.bills_increase_pct / 100 * (basis - p.H), 0.0)
-    note = f"Uses {money(basis)} of bills on standing orders instead of H of {money(p.H)}. Shown beside the judges' number, not in place of it."
+    note = f"Uses {money(basis)} of bills on standing orders instead of H of {money(p.H)}. Shown beside the standard (judges') number, not in place of it."
     return ExtraFigure(label, True, "bills_missing_from_h", runway_from(buffer_left, spending - income_after), spending, False, note, {"bills_basis": basis})
 
 
@@ -345,9 +345,9 @@ def _facts(p, shock, *, bills_added, one_off, buffer_left, raw_spending, months,
     if capped.switched_on and capped.max_applied:
         add("ei_weekly_max_applied", f"The EI weekly maximum holds income at {money(capped.income_after)} a month, not {money(cut.keep_fraction * p.I)}.")
     if shock.bills_increase_pct > 0 and p.H == 0:
-        add("bills_shock_no_bills", "No regular bills visible in H, so this changes nothing in the judges' formula.")
+        add("bills_shock_no_bills", "No regular bills visible in H, so this changes nothing in the standard (judges') formula.")
     if shock.bills_increase_pct > 0 and p.bills_hidden:
-        add("bills_shock_too_small", f"The judges' bills are {money(p.H)}. Standing orders show {money(p.bills_on_standing_orders)}, so the shock on H is too small.")
+        add("bills_shock_too_small", f"The standard (judges') bills are {money(p.H)}. Standing orders show {money(p.bills_on_standing_orders)}, so the shock on H is too small.")
     if shock.one_off_spending_multiple > 0 and p.S == 0:
         add("one_off_zero_spending", "Typical spending is $0, so a cost sized in months of spending comes to $0.")
     if p.B <= 0:

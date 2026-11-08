@@ -35,7 +35,7 @@ def judges_rows(p):
 def flow_rows(p, flows):
     """Typical months against what actually happened."""
     return [
-        {"Measure": "Typical month (judges' I and S)", "Money in": money(p.I), "Money out": money(p.S), "Difference": signed_money(p.I - p.S)},
+        {"Measure": "Typical month (standard (judges') I and S)", "Money in": money(p.I), "Money out": money(p.S), "Difference": signed_money(p.I - p.S)},
         {"Measure": "Average month", "Money in": money(flows.average_in), "Money out": money(flows.average_out), "Difference": signed_money(flows.average_change)},
         {"Measure": f"Total, {flows.n_months} months", "Money in": money(flows.total_in), "Money out": money(flows.total_out), "Difference": signed_money(flows.total_change)},
     ]

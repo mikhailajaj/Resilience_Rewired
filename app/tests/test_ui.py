@@ -1,4 +1,5 @@
 """UI tests: the live flow through Streamlit's AppTest, and every sentence on every account."""
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -61,7 +62,7 @@ def test_layoff_verdict_and_plan_on_20111(app):
     preset(app, "Laid off, EI 55%")
     body = page(app)
     assert "the money runs out in month 4, about 2.6 months short" in body
-    assert "The judges' runway is 3.4 months." in body
+    assert "The standard (judges') runway is 3.4 months." in body
     assert "Selected: Laid off, EI 55%" in body
     assert "spending needs to drop by **$2,178 a month**" in body
 
@@ -102,11 +103,11 @@ def test_typed_months_beyond_the_slider_stay_in_the_box(app):
 def test_dollar_repair_clears_the_months_slider(app):
     show(app, 20111)
     preset(app, "Furnace dies")
-    assert "Total one-off: $8,600" in page(app)
+    assert "One-off cost: $8,600, 1 month of typical spending before the shock ($8,600 a month)." in page(app)
     app.number_input(key="w_oneoff_dollars").set_value(5000.0).run()
     assert not app.exception
     body = page(app)
-    assert "Total one-off: $5,000" in body and "the buffer lasts 5.6 months, down from 7.8 months" in body
+    assert "One-off cost: $5,000." in body and "Total one-off" not in body and "the buffer lasts 5.6 months, down from 7.8 months" in body
     assert app.slider(key="w_oneoff_months").value == 0
 
 
@@ -153,13 +154,13 @@ def test_hard_accounts_draw_the_whole_page(app):
 def test_negative_buffer_does_not_blame_the_cost(app):
     show(app, 32078)
     preset(app, "Furnace dies")
-    assert "The balance was already -$2,513 before this" in page(app)
+    assert "The buffer (average balance over the last 6 months) was already -$2,513 before this" in page(app)
 
 
 def test_bills_twist_on_account_with_no_bills_says_why(app):
     show(app, 20111)
     preset(app, "Rent or bills up")
-    assert "the judges' formula changes nothing for this" in page(app)
+    assert "the standard (judges') formula changes nothing for this" in page(app)
 
 
 def test_start_month_never_changes_the_numbers(app):
@@ -188,23 +189,29 @@ def test_verdict_never_comes_from_rounding():
             assert "They make it" in v.sentence
 
 
-@pytest.mark.parametrize("key", [p.key for p in list_presets()] + ["ei_max", "repair_and_rent"])
+@pytest.mark.parametrize("key", [p.key for p in list_presets()] + ["ei_max", "repair_and_rent", "length_one_target_one"])
 def test_every_sentence_on_every_account(key):
     """No account and twist can leave a blank, a None or an unfilled slot on screen."""
     shock = {"ei_max": lambda: get_preset("job_loss_ei", ei_weekly_max=EI_WEEKLY_MAX_2026),
-             "repair_and_rent": lambda: get_preset("no_shock", one_off_dollars=5000, other_spending_change=300)}.get(key, lambda: get_preset(key))()
+             "repair_and_rent": lambda: get_preset("no_shock", one_off_dollars=5000, other_spending_change=300),
+             "length_one_target_one": lambda: get_preset("job_loss_ei", months=1)}.get(key, lambda: get_preset(key))()
     through = shock.income_cut.months if shock.income_cut else None
     for a in IDS:
         p = get_profile(a)
         r = apply_shock(a, shock, through_months=through)
-        plan = make_plan(a, shock, through_months=through)
+        plan = make_plan(a, shock, through_months=through, target_months=1.0 if key == "length_one_target_one" else 3.0)
         v = text.verdict(r)
         lines = [text.summary_line(p), v.sentence, v.second_line or "", text.assumption_line(r) or "", *text.notes(p), *text.fact_lines(r, p),
-                 *text.goal_lines(plan), *text.backup_lines(plan)]
+                 *text.goal_lines(plan), *text.backup_lines(plan), text.oneoff_line(r) or "", text.after_line(r)]
         for row in text.our_rows(r, p, plan):
             lines += [row.label, row.value, row.counterpart or "", *row.lines]
         for line in lines:
             assert "None" not in line and "nan" not in line and "{" not in line and "-$0" not in line, (a, key, line)
+            assert "about 0 months short" not in line and "$$" not in line, (a, key, line)
+            assert not re.search(r"(?<![\d.])1 months\b", line), (a, key, line)
+            down = re.search(r"lasts (.+?), (?:down|up) from (.+?)\.", line)
+            assert not down or down.group(1) != down.group(2), (a, key, line)
+            assert "down from No shortfall" not in line, (a, key, line)
         assert text.backup_lines(plan), (a, key)
         assert text.goal_lines(plan), (a, key)
 
@@ -217,7 +224,7 @@ def test_flow_line_on_20111(app):
 def test_our_numbers_show_latest_balance_and_actual_change(app):
     show(app, 20111)
     html_text = str([h.proto for h in app.get("html")])
-    assert "Latest balance" in html_text and "$10,863" in html_text and "judges&#x27; buffer: $17,612" in html_text
+    assert "Latest balance" in html_text and "$10,863" in html_text and "standard (judges&#x27;) buffer: $17,612" in html_text
     assert "Actual change, last 12 months" in html_text and "-$748 a month" in html_text and "typical month: -$2,260" in html_text
 
 

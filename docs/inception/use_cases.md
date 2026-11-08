@@ -1,6 +1,6 @@
 # Use cases
 
-The actors are the same for all three: presenter (primary), judge (supporting) and customer (offstage). Sections A to H are from the [wireframes](../design/ux/wireframes.md), `K.*` and `N.*` keys are from the [copy deck](../design/ux/copy.md), and engine codes are from the [contract](../engine_contract.md). Account counts are from the [warnings table](../know_the_customer.md#warnings). "No screen" means no state is designed yet.
+The actors are the same for all four: presenter (primary), judge (supporting) and customer (offstage). Sections A to H are from the [wireframes](../design/ux/wireframes.md), `K.*` and `N.*` keys are from the [copy deck](../design/ux/copy.md), and engine codes are from the [contract](../engine_contract.md). Account counts are from the [warnings table](../know_the_customer.md#warnings). "No screen" means no state is designed yet.
 
 Drafted by the inception agent. Not yet reviewed, and no area has a named owner ([OI-9](scope.md#open-items-for-the-owner)).
 
@@ -93,8 +93,8 @@ Drafted by the inception agent. Not yet reviewed, and no area has a named owner 
 
 | Field | Value |
 | :-- | :-- |
-| Traces to | BR-3, BR-7, BR-8, BR-10, BR-11, BR-12 |
-| Rules | RU-1, RU-3, RU-4, RU-5, RU-6, RU-7, RU-8, RU-11, RU-12 |
+| Traces to | BR-3, BR-7, BR-8, BR-10, BR-11, BR-12, BR-23 |
+| Rules | RU-1, RU-3, RU-4, RU-5, RU-6, RU-7, RU-8, RU-11, RU-12, RU-27, RU-28, RU-31 |
 | Preconditions | A valid customer is on screen. A shock is optional |
 | Trigger | The presenter reaches the plan, or a judge asks what the customer should do |
 | Wireframes | [F](../design/ux/wireframes.md#f-goal-plan-emergency-fund-j3), [G](../design/ux/wireframes.md#g-backup-plan-if-the-shock-hits-j3) |
@@ -126,3 +126,93 @@ Drafted by the inception agent. Not yet reviewed, and no area has a named owner 
 | 4e | One-off with no length | `K.g_oneoff` | G |
 | 4f | Pension (740) | Shown as normal | G |
 | 5a | Running loan | `ask_lender`, marked as needing agreement | G |
+| 5b | Running loan ends within the months asked (60 within 6 months) | `P.loan_backup` (ours) under the steps; the judges' runway and verdict stay. **Gated on NEW-ADR-1** (RU-28) | [G](../design/ux/wireframes.md#g-backup-plan-if-the-shock-hits-j3) |
+
+## J4 Ask the assistant
+
+Summary use case for the guided chat. Author: the inception agent; owner TBD (OI-9). It runs offline with no language model (RU-15), and its user-goal use cases are in [`use_cases_chat.md`](use_cases_chat.md).
+
+| Field | Value |
+| :-- | :-- |
+| Traces to | BR-14, BR-15, BR-16, BR-17, BR-18 |
+| Rules | RU-15, RU-17, RU-20. The rules of J4.1 to J4.4 apply in their steps |
+| Preconditions | App open, `warm_up()` run, a customer loaded in the shared picker (A) |
+| Trigger | The presenter opens the Chat page |
+| Wireframes | [T1 to T6](../design/ux/wireframes.md#t-chat-page-j4) |
+
+**Main flow**
+
+1. The tool greets the customer in `ss.shown_id` with `T.greet`, `K.summary_line`, `T.range` and up to 3 notes (T2).
+2. The presenter states the twist with buttons ([J4.1](use_cases_chat.md#j41-ask-a-twist-with-buttons)) or in words ([J4.2](use_cases_chat.md#j42-ask-in-free-text)).
+3. The tool shows the engine call and the result sentences.
+4. The presenter follows up: plan, stack, resize or send to the controls ([J4.3](use_cases_chat.md#j43-follow-up-a-result)).
+5. The presenter downloads the transcript ([J4.4](use_cases_chat.md#j44-download-the-transcript)).
+
+**Extensions**
+
+| Step | Condition | Behaviour | Screen |
+| :-- | :-- | :-- | :-- |
+| 1a | No customer, or an invalid ID | `T.no_customer`; the picker shows its message | T1 |
+| 1b | Warning codes apply | The first 3 of `notes(p)` in the greeting, in copy deck order | T2 |
+| 1c | Short history: the shortest is 12 months (2 accounts, computed on 2026-11-07) | The data range and month count are shown. **A short-history note is gated on OI-12**; fallback: none, the presenter reads the range | T2 |
+| 1d | Data stops before 2025-12 (76) | `N.stale` among the notes | T2 |
+| 2a | The free text can't be read | Back to the buttons; nothing is guessed (RU-17) | T6 |
+| 4a | The customer changes in the picker | The chat restarts for the new customer; the old one stays in the transcript only (RU-20) | T2 |
+
+## J5 Design a plan
+
+Summary use case for the plan designer at the bottom of Shock and plan. Author: the inception agent; owner TBD (OI-9). Its user-goal use cases are in [`use_cases_plan.md`](use_cases_plan.md); `P.*` keys are in [copy §11](../design/ux/copy.md#11-plan-designer-p) and screens P1 to P5 in [wireframes P](../design/ux/wireframes.md#p-plan-designer-j5).
+
+```mermaid
+flowchart LR
+    presenter["«actor» Presenter"]
+    judge["«supporting» Judge"]
+    customer["«offstage» Bank customer"]
+    subgraph j5["J5 Design a plan"]
+        uc0(["J5 Design a plan"])
+        uc1(["J5.1 Plan a savings goal"])
+        uc2(["J5.2 Plan time off work"])
+        uc3(["J5.3 Budget for an emergency"])
+        uc4(["J5.4 Read the combined timeline"])
+        uc5(["Count the loan ending (RU-27)"])
+    end
+    presenter --> uc0
+    judge -.->|"names the goal"| presenter
+    customer -.->|"appears only as data"| uc0
+    uc0 -.->|«include»| uc4
+    uc1 -.->|«extend»| uc0
+    uc2 -.->|«extend»| uc0
+    uc3 -.->|«extend»| uc0
+    uc5 -.->|«extend»| uc1
+    uc5 -.->|«extend»| uc2
+    uc5 -.->|«extend»| uc4
+```
+
+| Field | Value |
+| :-- | :-- |
+| Traces to | BR-19, BR-20, BR-21, BR-22, BR-23 |
+| Rules | RU-1, RU-2, RU-9, RU-11, RU-23, RU-24, RU-26, RU-27 |
+| Preconditions | A valid customer is on Shock and plan (J1 1, 2) |
+| Trigger | A judge asks what the customer could plan for, such as "save $60k for a car in 2 years" |
+
+**Main flow**
+
+1. The presenter scrolls to the plan designer (P1). The tool shows the three saving rates, the headline first (RU-23).
+2. The presenter ticks one or more plans: a savings goal ([J5.1](use_cases_plan.md#j51-plan-a-savings-goal)), time off work ([J5.2](use_cases_plan.md#j52-plan-time-off-work)) or an emergency budget ([J5.3](use_cases_plan.md#j53-budget-for-an-emergency)).
+3. The tool answers each ticked plan in its own panel, on no-shock numbers (RU-11).
+4. The tool draws one timeline with every plan's markers, and its table view ([J5.4](use_cases_plan.md#j54-read-the-combined-timeline)).
+5. The presenter reads each plan's headline line.
+
+**Extensions**
+
+| Step | Condition (accounts) | Behaviour | Screen |
+| :-- | :-- | :-- | :-- |
+| 1a | ID invalid or missing | P isn't drawn; go to J1 2a or 2b | A3, A4 |
+| 1b | S is 0 (77) | No fund target: `P.no_fund`; goals count from $0 | P1 |
+| 1c | Data stops before 2025-12 (76) | Month 1 is the month after the last data month: `P.month_one` | P1 |
+| 1d | Short history (840 under 24 months; shortest 12) | The data range is shown. A note is **gated on OI-12**; fallback: none | P1 |
+| 2a | Nothing ticked | Only the fund marker and the rates show | P1 |
+| 3a | A shock is set on the page | Ignored here (RU-11): `P.no_shock_used` | P1 |
+| 4a | Running loan (448), status D (45) | Payoff marker; `P.loan_d` for D (RU-27) | P5 |
+| 4b | The customer changes | Ticks and inputs stay; every figure is recalculated for the new customer (RU-12) | P1 |
+

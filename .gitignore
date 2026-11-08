@@ -3,3 +3,6 @@
 __pycache__/
 .pytest_cache/
 .DS_Store
+images/
+.streamlit/secrets.toml
+app/.streamlit/secrets.toml

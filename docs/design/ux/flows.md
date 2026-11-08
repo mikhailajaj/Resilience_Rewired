@@ -1,6 +1,6 @@
 # Flows: Resilience Rewired
 
-Status: low fidelity. Layout: one page, no login, three sections stacked top to bottom (Know, Shock, Plan). Colours and type belong to the visual designer.
+Status: low fidelity. Layout: no login. Sections 1 to 3 cover the Shock and plan page, with three sections stacked top to bottom (Know, Shock, Plan); section 4 covers the Chat page. Colours and type belong to the visual designer.
 
 IDs used below: J1 = Know the customer, J2 = Take a shock, J3 = Make a plan (the three jobs in the README).
 
@@ -98,3 +98,56 @@ flowchart TD
 ```
 
 The assumption line ("after month N we assume no income") shows only when `duration.assumption_applied`. The judges' runway is read from the engine as it is and never rounded up or compared with the length by the UI.
+
+## 4. Chat state machine (J4)
+
+The Chat page keeps one state in session state. Every click or typed line is one transition, and each state draws only the latest message's options (RU-19). Use cases: [J4.1 to J4.4](../../inception/use_cases_chat.md).
+
+```mermaid
+stateDiagram-v2
+    [*] --> NoCustomer
+    NoCustomer --> Greeting: valid ID in the picker
+    Greeting --> AskSize: twist button
+    Greeting --> Confirm: text parsed ok
+    Greeting --> AskSize: text partial
+    Greeting --> Greeting: text unsure or out of range
+    AskSize --> AskSize: size stored, another needed
+    AskSize --> AskSize: value out of range, ask again
+    AskSize --> Result: last size stored, engine run
+    Confirm --> Result: Run it, engine run
+    Confirm --> Greeting: No, use buttons
+    Confirm --> Confirm: new text parsed ok
+    Result --> Plan: backup or goal plan
+    Plan --> Plan: the other plan
+    Result --> AskSize: add another shock
+    Plan --> AskSize: add another shock
+    Result --> PickSize: change the size
+    Plan --> PickSize: change the size
+    PickSize --> AskSize: size chosen
+    Result --> Sent: send, values fit
+    Plan --> Sent: send, values fit
+    Result --> Result: send, values don't fit
+    Sent --> [*]: Shock and plan page opens
+    Greeting --> NoCustomer: new customer
+    Result --> NoCustomer: new customer
+    Plan --> NoCustomer: new customer
+    NoCustomer --> Greeting: picker loads another ID
+```
+
+A changed `ss.shown_id` in any state sends the chat to `Greeting` for the new customer (RU-20). Download is open in every state except `NoCustomer`, and never changes the state.
+
+| State | Bot shows | Options |
+| :-- | :-- | :-- |
+| NoCustomer | `T.no_customer` | None; the picker (A) |
+| Greeting | `T.greet`, summary, range, notes, `T.pick` | `T.b_job`, `T.b_bills`, `T.b_repair`, `T.b_mix`, `T.b_type`; text box |
+| AskSize: keep | `T.ask_keep` | `55%`, Other (0 to 100) |
+| AskSize: months | `T.ask_months` | `6 months`, `12 months`, `Until it runs out`, Other (1 to 120) |
+| AskSize: bills | `T.ask_bills` | `+15%`, Other %, Dollars a month |
+| AskSize: repair | `T.ask_repair` | `1 month of spending`, Dollar amount |
+| Confirm | `T.confirm` | `T.b_run`, `T.b_buttons`; text box |
+| Result | `T.engine_call`, result sentences | `T.f_backup`, `T.f_goal`, `T.f_stack`, `T.f_size`, `T.f_new`, `T.f_send` |
+| Plan | `T.engine_call`, plan lines | As Result, with the other plan first |
+| PickSize | `T.pick_size` | One button per size in the shock |
+| Sent | `T.send_ok` | None: the page changes |
+
+Mix asks keep, months and bills in that order, matching the `job_loss_bills` preset. Kinds and fields: job loss sets `income_cut`; bills sets `bills_increase_pct` or, in dollars, `other_spending_change`; repair sets `one_off_spending_multiple` or `one_off_dollars`.

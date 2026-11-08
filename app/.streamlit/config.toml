@@ -5,6 +5,9 @@
 [server]
 enableStaticServing = true          # serves app/static/* at /app/static/* (Figtree files)
 
+[browser]
+gatherUsageStats = false      # no usage telemetry from the demo
+
 [client]
 toolbarMode = "minimal"            # removes the Deploy button from the projected screen
 

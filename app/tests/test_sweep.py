@@ -81,7 +81,7 @@ def test_sweep(key):
         else:
             assert r.runway.months == round(min(r.buffer_left / r.gap, 120), 1)
 
-        # The extra figures never replace the judges' number.
+        # The extra figures never replace the standard (judges') number.
         assert r.runway == r.after.runway
         for e in (r.bills_on_standing_orders, r.if_you_adjust):
             assert e.label and e.reason and e.note

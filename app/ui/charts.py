@@ -142,3 +142,35 @@ def monthly_in_out(history):
 
     chart = alt.layer(layer(MONEY_IN, "Money in", 2), layer(MONEY_OUT, "Money out", 3), title="Money in and money out by month").resolve_scale(color="independent")
     return _configure(chart).properties(height=430)
+
+
+PLAN_COLOURS = {"actual": BLUE, "judges": MUTED, "lean": ORANGE}
+PLAN_DASH = {"actual": [1, 0], "judges": [6, 4], "lean": [1, 0]}
+
+
+def plan_timeline(timeline, rate_labels, marker_letter):
+    """One line per saving rate, month 0 to the horizon, with a letter marker on the line where each event happens."""
+    rows = [{"month": m, "rate": rate_labels[line.rate], "balance": float(b)} for line in timeline.lines for m, b in enumerate(line.balance)]
+    frame = pd.DataFrame(rows)
+    domain = [rate_labels[line.rate] for line in timeline.lines]
+    colour = alt.Color("rate:N", sort=domain, scale=alt.Scale(domain=domain, range=[PLAN_COLOURS[line.rate] for line in timeline.lines]),
+                       legend=alt.Legend(orient="top", title=None, symbolType="stroke", labelLimit=420))
+    x = alt.X("month:Q", title="Month", axis=alt.Axis(grid=False, tickMinStep=1, format="d"), scale=alt.Scale(domain=[0, timeline.horizon], nice=False))
+    y = alt.Y("balance:Q", title=None, axis=alt.Axis(format="$,.0f", tickCount=5))
+    lines = alt.Chart(frame).mark_line(strokeWidth=2).encode(
+        x=x, y=y, color=colour, strokeDash=alt.StrokeDash("rate:N", sort=domain, legend=None,
+                                                          scale=alt.Scale(domain=domain, range=[PLAN_DASH[line.rate] for line in timeline.lines])),
+        tooltip=[alt.Tooltip("month:Q", title="Month"), alt.Tooltip("rate:N", title="Rate"), alt.Tooltip("balance:Q", title="Balance", format="$,.0f")])
+    by_rate = {line.rate: line.balance for line in timeline.lines}
+    marks = []
+    for event in timeline.events:
+        if event.month is None:
+            continue
+        balance = by_rate[event.rate or "actual"]
+        marks.append({"month": event.month, "balance": float(balance[event.month]), "letter": marker_letter[event.code], "code": event.code})
+    layers = [lines]
+    if marks:
+        data = pd.DataFrame(marks)
+        layers.append(alt.Chart(data).mark_circle(size=170, color=INK, stroke="white", strokeWidth=2, opacity=1).encode(x="month:Q", y="balance:Q"))
+        layers.append(alt.Chart(data).mark_text(fontSize=14, fontWeight=700, color=INK, dy=-16, font="Figtree").encode(x="month:Q", y="balance:Q", text="letter:N"))
+    return _configure(alt.layer(*layers))

@@ -53,7 +53,7 @@ def test_matches_a_separate_stdlib_calculation(account_id):
 
 
 @pytest.mark.parametrize("bad,reason", [
-    ("abc", "not_digits"), ("", "not_digits"), (None, "not_digits"), (True, "not_digits"), (20111.0, "not_digits"),
+    ("abc", "not_digits"), ("", "not_digits"), (None, "not_digits"), (True, "not_digits"), (20111.5, "not_digits"),
     ("20_111", "not_digits"), ("-20111", "not_digits"), ("٢٠١١١", "not_digits"),
     (12345, "not_found"), ("12345", "not_found"), (0, "not_found"),
 ])

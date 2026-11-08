@@ -2,6 +2,7 @@ import math
 
 import pytest
 
+from app.engine.formulas import money
 from app.engine import InvalidPlanError, Shock, IncomeCut, apply_shock, get_preset, get_profile, make_plan, monthly_history
 from app.tests.raw import judges
 
@@ -166,3 +167,99 @@ def test_fixed_share_capped_when_fixed_exceeds_spending():
              if get_profile(a).S > 0 and get_profile(a).current_fixed_costs > get_profile(a).S)
     b = make_plan(a).backup
     assert b.fixed_share_of_spending == 1 and b.fixed_exceeds_spending and b.flexible_spending == 0
+
+
+def _step(plan, code):
+    return next((s for s in plan.backup.steps if s.code == code), None)
+
+
+def test_D8_cancel_other_orders_wording_on_95548():
+    plan = make_plan(95548)
+    s = _step(plan, "cancel_other_orders")
+    assert s is not None and s.order in (1, 2)
+    assert s.action == f"Cancel the other standing orders, if these aren't rent or bills. That saves {money(s.monthly_saving)} a month."
+    assert s.action.startswith("Cancel the other standing orders, if these aren't rent or bills. That saves $")
+    assert not s.needs_agreement and s.one_time_amount == 0
+
+
+def test_D8_all_flexible_wording():
+    seen = 0
+    for a in (95548, 20111, 22286, 26699, 36427):
+        s = _step(make_plan(a, get_preset("job_loss_bills")), "all_flexible")
+        if s is None:
+            continue
+        seen += 1
+        assert s.action == f"Cut the remaining {money(s.monthly_saving)} a month of other spending, if it isn't rent or bills. This leaves only fixed costs."
+    assert seen >= 1
+
+
+def test_D8_old_wording_is_gone_on_every_account():
+    for a in sorted(_all_ids())[::50]:
+        for s in make_plan(a).backup.steps:
+            if s.code == "cancel_other_orders":
+                assert "if these aren't rent or bills" in s.action
+            if s.code == "all_flexible":
+                assert "if it isn't rent or bills" in s.action
+
+
+def test_D7_headline_and_judges_mirror_the_flat_fields_on_every_account():
+    states = set()
+    for a in _all_ids():
+        g = make_plan(a).goal
+        h, j = g.headline, g.judges
+        assert (h.rate, j.rate) == ("actual", "judges")
+        assert h.monthly == g.actual_change_last_12
+        assert j.monthly == g.surplus
+        assert (j.state, j.monthly_amount, j.months_to_goal, j.reaches_within_horizon) == (g.state, g.monthly_amount, g.months_to_goal, g.reaches_within_horizon)
+        assert (j.cut_to_break_even, j.cut_to_reach_in_horizon, j.cut_is_possible) == (g.cut_to_break_even, g.cut_to_reach_in_horizon, g.cut_is_possible)
+        states.add(h.state)
+        if g.state in ("no_regular_spending", "already_there"):
+            assert h.state == g.state and h.monthly_amount == 0
+        elif h.monthly > 0:
+            assert h.state == "on_track" and h.monthly_amount == pytest.approx(h.monthly * g.surplus_share)
+            assert h.months_to_goal == math.ceil(g.still_needed / h.monthly_amount) and h.cut_to_break_even is None
+        else:
+            assert h.state == "no_surplus" and h.monthly_amount == 0 and h.months_to_goal is None and not h.reaches_within_horizon
+            assert h.cut_to_break_even == -h.monthly
+            assert h.cut_to_reach_in_horizon == pytest.approx(-h.monthly + g.still_needed / 12)
+            assert h.cut_is_possible == (-h.monthly <= g.flexible_spending)
+    assert states >= {"on_track", "no_surplus", "already_there", "no_regular_spending"}
+
+
+def test_D7_the_two_rates_can_differ_on_20111():
+    g = make_plan(20111).goal
+    assert g.headline.monthly == pytest.approx(-747.89, abs=0.01) and g.judges.monthly == pytest.approx(-2260.22, abs=0.01)
+    assert g.headline.cut_to_break_even < g.judges.cut_to_break_even
+
+
+def test_D7_headline_follows_surplus_share_and_target():
+    g = make_plan(66505, target_months=0.1).goal
+    assert g.headline.state == "already_there" and g.judges.state == "already_there"
+    for share in (0.25, 1.0):
+        h = make_plan(20176, target_months=30, surplus_share=share).goal.headline
+        if h.state == "on_track":
+            assert h.monthly_amount == pytest.approx(h.monthly * share)
+
+
+def test_lean_cut_equals_the_lean_months_step_wherever_it_exists_except_orders_above_lean():
+    from app.engine import saving_rates
+
+    seen = 0
+    for a in _all_ids():
+        s = _step(make_plan(a), "lean_months")
+        if s is None:
+            continue
+        r = saving_rates(a)
+        orders = sum(o.amount for o in get_profile(a).standing_orders if o.purpose == "other")
+        if orders > r.lean_above:
+            assert s.monthly_saving == pytest.approx(r.flexible_spending - orders, abs=1e-6)
+        else:
+            assert s.monthly_saving == pytest.approx(r.lean_cut, abs=1e-6)
+        seen += 1
+    assert seen > 100
+
+
+def _all_ids():
+    from app.engine.data import get_dataset
+
+    return sorted(get_dataset().rows_by_account)

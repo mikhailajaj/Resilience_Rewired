@@ -1,17 +1,16 @@
 """Make a plan: a goal plan before any shock, and a backup plan if the shock hits. Every figure comes from the account."""
 import math
 from dataclasses import dataclass
-from functools import lru_cache
 from numbers import Integral, Real
 
 from .data import get_dataset
 from .errors import InvalidPlanError
 from .formulas import Runway, money, runway_from
 from .profile import get_profile, parse_account_id
-from .shock import MAX_MONTHS, Fact, Shock, apply_shock, duration_path, get_preset, shock_gaps
+from .rates import LEAN_QUANTILE, duration_with_loan_end, lean_above_fixed, loan_end
+from .shock import MAX_MONTHS, DurationResult, Fact, Shock, apply_shock, duration_path, get_preset, shock_gaps
 
 MAX_PATH_ROWS = 6
-LEAN_QUANTILE = 0.25
 
 
 @dataclass(frozen=True)
@@ -40,6 +39,34 @@ class GoalPlan:
     cut_is_possible: bool | None
     savings_path: tuple
     actual_change_last_12: float
+    headline: "GoalAtRate | None" = None      # D7: the goal at the actual 12-month change (our estimate), shown first
+    judges: "GoalAtRate | None" = None        # the same at I - S; mirrors the flat fields above
+
+
+@dataclass(frozen=True)
+class GoalAtRate:
+    rate: str                         # "actual" (headline, ours) or "judges" (I - S)
+    monthly: float                    # the rate, signed
+    state: str                        # the GoalPlan.state codes
+    monthly_amount: float             # monthly * surplus_share when monthly > 0, else 0
+    months_to_goal: int | None
+    reaches_within_horizon: bool
+    cut_to_break_even: float | None
+    cut_to_reach_in_horizon: float | None
+    cut_is_possible: bool | None
+
+
+@dataclass(frozen=True)
+class LoanEndCheck:
+    """Ours (RU-28, ADR 0006). The backup plan's month-by-month check with the gap falling at the payoff month."""
+    payoff_month: int
+    monthly_drop: float               # LoanEnd.bump_judges: the part of P inside S and so inside the shocked gap
+    scheduled_only: bool              # status D
+    reason: str                       # applies | after_months | not_in_spending | no_length | no_shock
+    before: DurationResult | None     # the shock alone, counting the loan end
+    after_steps: DurationResult | None    # the same after the steps; drop 0 if an ask_lender step already pauses P
+    makes_it_before: bool | None
+    makes_it_after_steps: bool | None
 
 
 @dataclass(frozen=True)
@@ -78,7 +105,8 @@ class BackupPlan:
     months_to_cover: int | None
     months_to_low_balance_line: float | None
     steps: tuple
-    income_basis: str   # flat (the judges' rate) or ei_weekly_max
+    income_basis: str   # flat (the standard (judges') rate) or ei_weekly_max
+    loan_end: LoanEndCheck | None = None    # ours (ADR 0006); set whenever the loan is running
 
 
 @dataclass(frozen=True)
@@ -100,46 +128,47 @@ class Plan:
     backup_capped: BackupPlan | None = None
 
 
-@lru_cache(maxsize=None)
-def _lean_above_fixed(account_id):
-    """Spending above bills, insurance and loan payments in the account's lowest quarter of months."""
-    x = get_dataset().rows_by_account[account_id]
-    return float((x.money_out - x.household_bills - x.insurance - x.loan_payments).quantile(LEAN_QUANTILE))
-
-
 def _savings_path(buffer, monthly, months):
     rows = min(MAX_PATH_ROWS, months)
     points = sorted({math.ceil(k * months / rows) for k in range(1, rows + 1)})
     return tuple(PathPoint(m, buffer + m * monthly) for m in points)
 
 
+def _goal_at(p, rate, monthly, target_months, surplus_share, horizon):
+    flexible = max(p.S - p.current_fixed_costs, 0.0)
+    if p.S <= 0:
+        return GoalAtRate(rate, monthly, "no_regular_spending", 0.0, None, False, None, None, None)
+    needed = target_months * p.S - p.B
+    if needed <= 0:
+        return GoalAtRate(rate, monthly, "already_there", 0.0, 0, True, None, None, None)
+    if monthly > 0:
+        amount = monthly * surplus_share
+        months = math.ceil(needed / amount)
+        return GoalAtRate(rate, monthly, "on_track", amount, months, months <= horizon, None, None, None)
+    return GoalAtRate(rate, monthly, "no_surplus", 0.0, None, False, -monthly, -monthly + needed / horizon, -monthly <= flexible)
+
+
 def _goal(p, target_months, surplus_share, horizon):
     x = get_dataset().rows_by_account[p.account_id]
     actual = float((x.money_in - x.money_out).tail(12).mean())
     surplus = p.I - p.S
+    judges = _goal_at(p, "judges", surplus, target_months, surplus_share, horizon)
+    headline = _goal_at(p, "actual", actual, target_months, surplus_share, horizon)
     flexible = max(p.S - p.current_fixed_costs, 0.0)
-    below = max(-p.B, 0.0)
-    common = dict(target_months=target_months, current_buffer=p.B, surplus=surplus, surplus_share=surplus_share,
-                  below_zero_by=below, flexible_spending=flexible, actual_change_last_12=actual)
-    if p.S <= 0:
-        return GoalPlan(state="no_regular_spending", target_amount=None, still_needed=None, months_covered=None, monthly_amount=0.0,
-                        months_to_goal=None, reaches_within_horizon=False, cut_to_break_even=None, cut_to_reach_in_horizon=None,
-                        cut_is_possible=None, savings_path=(), **common)
-    target = target_months * p.S
-    needed = target - p.B
-    if needed <= 0:
-        return GoalPlan(state="already_there", target_amount=target, still_needed=0.0, months_covered=p.B / p.S, monthly_amount=0.0,
-                        months_to_goal=0, reaches_within_horizon=True, cut_to_break_even=None, cut_to_reach_in_horizon=None,
-                        cut_is_possible=None, savings_path=(), **common)
-    if surplus > 0:
-        monthly = surplus * surplus_share
-        months = math.ceil(needed / monthly)
-        return GoalPlan(state="on_track", target_amount=target, still_needed=needed, months_covered=max(p.B, 0.0) / p.S, monthly_amount=monthly,
-                        months_to_goal=months, reaches_within_horizon=months <= horizon, cut_to_break_even=None, cut_to_reach_in_horizon=None,
-                        cut_is_possible=None, savings_path=_savings_path(p.B, monthly, months), **common)
-    return GoalPlan(state="no_surplus", target_amount=target, still_needed=needed, months_covered=max(p.B, 0.0) / p.S, monthly_amount=0.0,
-                    months_to_goal=None, reaches_within_horizon=False, cut_to_break_even=-surplus, cut_to_reach_in_horizon=-surplus + needed / horizon,
-                    cut_is_possible=-surplus <= flexible, savings_path=(), **common)
+    target = target_months * p.S if p.S > 0 else None
+    needed = None if target is None else target - p.B
+    path = ()
+    if judges.state == "on_track":
+        path = _savings_path(p.B, judges.monthly_amount, judges.months_to_goal)
+    return GoalPlan(
+        state=judges.state, target_months=target_months, target_amount=target,
+        current_buffer=p.B, still_needed=None if needed is None else 0.0 if judges.state == "already_there" else needed,
+        months_covered=None if p.S <= 0 else p.B / p.S if judges.state == "already_there" else max(p.B, 0.0) / p.S,
+        surplus=surplus, surplus_share=surplus_share, monthly_amount=judges.monthly_amount, months_to_goal=judges.months_to_goal,
+        reaches_within_horizon=judges.reaches_within_horizon, below_zero_by=max(-p.B, 0.0),
+        cut_to_break_even=judges.cut_to_break_even, cut_to_reach_in_horizon=judges.cut_to_reach_in_horizon,
+        flexible_spending=flexible, cut_is_possible=judges.cut_is_possible, savings_path=path,
+        actual_change_last_12=actual, headline=headline, judges=judges)
 
 
 def _low_balance(p, surplus_share):
@@ -193,6 +222,7 @@ def _backup(p, shock, through_months, use_cap=False):
     makes_after = None
     if months is not None:
         makes_after = duration_path(after_left, gap_during - saved, gap_after - saved, benefit, months, "no_income").verdict == "makes_it"
+    check = _loan_end_check(p, r, shock, steps, left, gap_during, gap_after, benefit, months, duration, saved, after_left)
     line = None
     if p.P > 0:
         line = 0.0 if left <= p.P else (round((left - p.P) / gap, 1) if gap > 0 else None)
@@ -207,7 +237,31 @@ def _backup(p, shock, through_months, use_cap=False):
         cut_to_last_share_of_flexible=cut_last / flexible if cut_last is not None and flexible > 0 else None,
         cut_to_close_gap=close_gap, cut_is_possible=needed <= flexible, runway_if_all_flexible_cut=runway_from(left, gap - flexible),
         cover_needed=cover, months_to_cover=math.ceil(cover / surplus) if cover > 0 and surplus > 0 else None,
-        months_to_low_balance_line=line, steps=steps, income_basis="ei_weekly_max" if use_cap else "flat")
+        months_to_low_balance_line=line, steps=steps, income_basis="ei_weekly_max" if use_cap else "flat", loan_end=check)
+
+
+def _loan_end_check(p, r, shock, steps, left, gap_during, gap_after, benefit, months, duration, saved, after_left):
+    if not p.running_loan:
+        return None
+    end = loan_end(p.account_id)
+    if r.no_shock:
+        reason = "no_shock"
+    elif months is None:
+        reason = "no_length"
+    elif not end.in_typical_spending:
+        reason = "not_in_spending"
+    elif end.payoff_month > months:
+        reason = "after_months"
+    else:
+        reason = "applies"
+    before = after = None
+    if reason == "applies":
+        ends = duration.after_ends or "no_income"
+        drop = 0.0 if any(s.code == "ask_lender" for s in steps) else end.bump_judges
+        before = duration_with_loan_end(left, gap_during, gap_after, benefit, months, ends, payoff_month=end.payoff_month, monthly_drop=end.bump_judges)
+        after = duration_with_loan_end(after_left, gap_during - saved, gap_after - saved, benefit, months, ends, payoff_month=end.payoff_month, monthly_drop=drop)
+    return LoanEndCheck(end.payoff_month, end.bump_judges, end.scheduled_only, reason, before, after,
+                        None if before is None else before.verdict == "makes_it", None if after is None else after.verdict == "makes_it")
 
 
 def _steps(p, left, gap, spending_after, flexible, needed, cover):
@@ -231,10 +285,10 @@ def _steps(p, left, gap, spending_after, flexible, needed, cover):
     orders = sum(o.amount for o in p.standing_orders if o.purpose == "other")
     from_orders = min(orders, flexible)
     if from_orders > 0 and saved() < needed:
-        add("cancel_other_orders", f"Cancel the other standing orders, which save {money(from_orders)} a month.", from_orders)
+        add("cancel_other_orders", f"Cancel the other standing orders, if these aren't rent or bills. That saves {money(from_orders)} a month.", from_orders)
 
     hidden_bills = max(p.bills_on_standing_orders - p.H, 0.0)
-    lean = max(_lean_above_fixed(p.account_id) - hidden_bills, 0.0)
+    lean = max(lean_above_fixed(p.account_id) - hidden_bills, 0.0)
     target_after = max(lean - from_orders, 0.0)
     from_lean = max(flexible - from_orders - target_after, 0.0)
     if from_lean > 0 and saved() < needed:
@@ -242,7 +296,7 @@ def _steps(p, left, gap, spending_after, flexible, needed, cover):
 
     rest = flexible - from_orders - from_lean
     if rest > 0 and saved() < needed:
-        add("all_flexible", f"Cut the remaining {money(rest)} a month of other spending. This leaves only fixed costs.", rest)
+        add("all_flexible", f"Cut the remaining {money(rest)} a month of other spending, if it isn't rent or bills. This leaves only fixed costs.", rest)
 
     from_loan = min(p.P, max(spending_after - saved(), 0.0))
     if from_loan > 0 and saved() < needed:

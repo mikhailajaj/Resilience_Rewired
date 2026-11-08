@@ -9,7 +9,9 @@ import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from app.assistant.chat_text import T
 from app.engine import warm_up
+from app.ui.findings_view import F
 from app.ui.shared import picker
 from app.ui.style import CSS
 
@@ -27,6 +29,9 @@ page = st.navigation([
             help="Know the customer, apply a shock of any size, and see the goal plan and backup plan."),
     st.Page("app_pages/customer_profiling.py", title="Customer profiling", icon=":material/person_search:",
             help="Everything on file for the customer, and questions to ask the stakeholder, with room for answers."),
+    st.Page("app_pages/assistant.py", title=T.page, icon=":material/chat:",
+            help="Pick a twist in a short conversation, or type it, and see the engine's result in plain words."),
+    st.Page("app_pages/findings.py", title=F.page, icon=":material/insights:"),
 ], position="top")
 picker()
 page.run()
