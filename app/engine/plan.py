@@ -39,7 +39,7 @@ class GoalPlan:
     cut_is_possible: bool | None
     savings_path: tuple
     actual_change_last_12: float
-    headline: "GoalAtRate | None" = None      # D7: the goal at the actual 12-month change (ours), shown first
+    headline: "GoalAtRate | None" = None      # D7: the goal at the actual 12-month change (our estimate), shown first
     judges: "GoalAtRate | None" = None        # the same at I - S; mirrors the flat fields above
 
 
@@ -105,7 +105,7 @@ class BackupPlan:
     months_to_cover: int | None
     months_to_low_balance_line: float | None
     steps: tuple
-    income_basis: str   # flat (the judges' rate) or ei_weekly_max
+    income_basis: str   # flat (the standard (judges') rate) or ei_weekly_max
     loan_end: LoanEndCheck | None = None    # ours (ADR 0006); set whenever the loan is running
 
 

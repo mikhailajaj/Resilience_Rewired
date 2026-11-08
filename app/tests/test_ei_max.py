@@ -1,4 +1,4 @@
-"""The EI weekly maximum: beside the judges' number, never replacing it."""
+"""The EI weekly maximum: beside the standard (judges') number, never replacing it."""
 import math
 import statistics
 from collections import Counter

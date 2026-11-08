@@ -100,11 +100,11 @@ def region_b(p):
     tiles = st.columns(4)
     tiles[0].metric("Typical money in", text.money(p.I), border=True)
     tiles[1].metric("Typical spending", text.money(p.S), border=True)
-    tiles[2].metric("Buffer", text.money(p.B), border=True)
+    tiles[2].metric("Buffer", text.money(p.B), border=True, help="Average daily balance over the last 6 months.")
     tiles[3].metric("Runway, no shock", p.runway.label, border=True)
     row = st.columns(3)
     row[0].metric("Household bills", text.money(p.H))
-    row[1].metric("Fixed costs", text.money(p.F))
+    row[1].metric("Typical fixed costs (standard)", text.money(p.F))
     row[2].metric("Loan payment", text.money(p.P))
     for line in text.notes(p)[:3]:
         md(f"- {line}")
@@ -145,7 +145,7 @@ def region_c(result):
         switch.toggle("Apply the EI weekly maximum", key="w_ei_on", on_change=from_single, args=("ei_on",), disabled=no_cut)
         amount.number_input("Weekly maximum ($)", 1.0, 5000.0, step=1.0, key="w_ei_max", on_change=from_single, args=("ei_max",), disabled=no_cut or not inp["ei_on"], format="%g")
         caption("Not used while income is unchanged." if no_cut else
-                f"{'On' if inp['ei_on'] else 'Off'}. It starts off, to match the judges. When on, the extra runway in \"Our numbers\" caps EI at the weekly maximum. $729 a week is the 2026 maximum.")
+                f"{'On' if inp['ei_on'] else 'Off'}. It starts off, to match the standard (judges') figures. When on, the extra runway in \"Our numbers\" caps EI at the weekly maximum. $729 a week is the 2026 maximum.")
     with right:
         pair("bills", "Percent on the customer's usual bills. Slider to 50, type up to 500.")
         st.number_input("Bills or rent up ($ a month)", 0.0, 20000.0, step=50.0, key="w_dollars_month", on_change=from_single, args=("dollars_month",), format="%g")
@@ -159,7 +159,7 @@ def region_c(result):
             md(line)
         with st.expander("More options"):
             st.selectbox("Shock starts in", MONTH_NAMES, key="w_start", on_change=from_single, args=("start",))
-            caption("Optional. Spending is higher in January and June. This never changes the judges' runway.")
+            caption("Optional. If the shock runs into January, a note shows this customer's typical January spending. It doesn't change any number on the page.")
 
 
 def region_d_verdict(result, profile):
@@ -207,8 +207,8 @@ def region_d_cards(r):
 
 def region_e(result, profile, plan):
     with st.container(key="ours"):
-        st.subheader("Our numbers, shown beside the judges'", anchor=False)
-        caption("They never replace the judges' figures.")
+        st.subheader("Our estimates, shown beside the standard (judges') figures", anchor=False)
+        caption("They never replace the standard (judges') figures.")
         rows = text.our_rows(result, profile, plan)
         cols = st.columns(3, gap="medium")
         for i, row in enumerate(rows):

@@ -92,7 +92,7 @@ def test_AC1_job_loss_by_clicks_gives_the_judges_numbers():
     body = page(at)
     assert "IncomeCut(0.55, 6)" in body
     assert "the money runs out in month 4, about 2.6 months short" in body
-    assert "The judges' runway is 3.4 months." in body
+    assert "The standard (judges') runway is 3.4 months." in body
     assert "Monthly gap $2,260 -> $5,113." in body
 
 

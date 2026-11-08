@@ -116,7 +116,7 @@ class CustomerProfile:
 
 @dataclass(frozen=True)
 class AccountFlows:
-    """What actually moved through the account, as opposed to the judges' typical (median) months."""
+    """What actually moved through the account, as opposed to the standard (judges') typical (median) months."""
     n_months: int
     total_in: float
     total_out: float

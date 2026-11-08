@@ -59,7 +59,7 @@ def test_r21_the_label_keeps_0_0_months_while_the_sentence_says_under():
     """R21: 32179 at EI 40%."""
     r = run(32179, keep_fraction=0.4)
     assert r.runway.label == "0.0 months"
-    assert text.verdict(r).second_line == "The judges' runway is under 0.1 months."
+    assert text.verdict(r).second_line == "The standard (judges') runway is under 0.1 months."
     assert text.runway_words(r.runway) == "under 0.1 months"
 
 
@@ -110,9 +110,9 @@ def test_d6_the_after_line_names_money_in_and_spending_after_the_shock():
 
 def test_d7_the_headline_goal_line_leads_then_the_judges_typical_month():
     lines = text.goal_lines(make_plan(20111, get_preset("no_shock")))
-    assert lines[0] == ("Over the last 12 months the balance changed by -$748 a month (ours), so at that pace the fund isn't reached. "
+    assert lines[0] == ("Over the last 12 months the balance changed by -$748 a month (our estimate), so at that pace the fund isn't reached. "
                         "Saving starts with spending $748 a month less.")
-    assert lines[1].startswith("On the judges' typical month (-$2,260 a month): ")
+    assert lines[1].startswith("On the standard (judges') typical month (-$2,260 a month): ")
 
 
 def test_backup_lines_loan_ending_inside_the_length_applies():
@@ -120,12 +120,12 @@ def test_backup_lines_loan_ending_inside_the_length_applies():
     plan = make_plan(20916, get_preset("job_loss_ei"), through_months=6)
     assert plan.backup.loan_end.reason == "applies"
     lines = text.backup_lines(plan)
-    assert lines[-2:] == ["Counting the loan ending in month 3, the monthly gap falls by $3,545 from then (ours).", "They still run out in month 4 (ours)."]
+    assert lines[-2:] == ["Counting the loan ending in month 3, the monthly gap falls by $3,545 from then (our estimate).", "They still run out in month 4 (our estimate)."]
 
 
 def test_backup_lines_loan_not_in_typical_spending_new_copy_22():
     plan = make_plan(20208, get_preset("job_loss_ei"), through_months=6)
     assert plan.backup.loan_end.reason == "not_in_spending"
     assert text.backup_lines(plan)[-1] == (
-        "The loan payment of $1,355 a month isn't in the judges' typical spending yet, because the loan started recently, "
-        "so the judges' figure doesn't rise when it ends in month 24 (ours).")
+        "The loan payment of $1,355 a month isn't in the standard (judges') typical spending yet, because the loan started recently, "
+        "so the standard (judges') figure doesn't rise when it ends in month 24 (our estimate).")

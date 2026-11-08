@@ -25,7 +25,7 @@ class T:
     engine_refused = "The engine didn't accept {field}. Pick that size again."
     engine_call = "⚙ engine call: `{call}`"
     change_line = "Runway {R0} -> {R1}. Monthly gap {g0} -> {g1}."          # NEW-COPY-6: copy has ${g0}; text.money already adds the $
-    ours = "(ours)"
+    ours = "(our estimate)"
     confirm = "I read this as: {plain}. Run it?"
     b_run = "Run it"
     b_buttons = "No, use buttons"
@@ -60,7 +60,7 @@ class T:
     other = "Other"                                                       # NEW-COPY-5
     use = "Use"                                                           # NEW-COPY-5
     placeholder = "Type the twist card, or a size"                        # NEW-COPY-5
-    ours_line = "{label}: {value} ({counterpart}) (ours)"                 # NEW-COPY-7
+    ours_line = "{label} (our estimate): {value} ({counterpart})"                 # NEW-COPY-7
     cheatsheet = "How to type a twist card"                               # NEW-COPY-8
 
     # Other-box placeholders, per field (flows section 4; the ones flows doesn't name follow RU-22).

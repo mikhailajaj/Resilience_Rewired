@@ -103,9 +103,9 @@ def test_new_copy_22_and_loan_backup_are_shared_with_text_py():
 
 def test_rate_rows_on_20111_put_the_headline_first_and_sign_the_money():
     assert plan_text.rate_rows(saving_rates(20111)) == [
-        ("Actual change, last 12 months (ours)", "-$748 a month", True),
+        ("Actual change, last 12 months (our estimate)", "-$748 a month", True),
         ("Typical money in minus typical spending", "-$2,260 a month", False),
-        ("Spending at its lean months (ours)", "+$604 a month", False)]
+        ("Saving at lean-month spending (our estimate)", "+$604 a month", False)]
 
 
 def test_rate_rows_show_a_zero_rate_without_a_sign():
@@ -118,14 +118,14 @@ def test_rate_rows_show_a_zero_rate_without_a_sign():
 def test_goal_months_never_and_over_cap_use_the_rate_labels():
     reaches = (reach("actual", "reached", 30), reach("judges", "never", None), reach("lean", "over_cap", None))
     lines = plan_text.goal_lines(design(), goal(reaches=reaches))
-    assert lines == ["Actual change, last 12 months (ours): 30 months.",
+    assert lines == ["Actual change, last 12 months (our estimate): 30 months.",
                      "Typical money in minus typical spending: never at this rate.",
-                     "Spending at its lean months (ours): more than 120 months."]
+                     "Saving at lean-month spending (our estimate): more than 120 months."]
 
 
 def test_goal_one_month_is_singular():
     lines = plan_text.goal_lines(design(), goal(reaches=(reach("actual", "reached", 1), reach("judges", "reached", 2), reach("lean", "reached", 3))))
-    assert lines[0] == "Actual change, last 12 months (ours): 1 month."
+    assert lines[0] == "Actual change, last 12 months (our estimate): 1 month."
     assert lines[1] == "Typical money in minus typical spending: 2 months."
 
 
@@ -178,51 +178,51 @@ def test_new_copy_27_second_cut_follows_the_cautious_cut_and_only_when_it_counts
     counted = deadline(counts_loan_end=True, payoff_month=17, cut_with_loan=672.08, on_pace_with_loan=False)
     lines = plan_text.goal_lines(design(), goal(dl=counted))
     cautious = next(i for i, line in enumerate(lines) if line.startswith("That needs"))
-    assert lines[cautious + 1] == "Counting the loan ending in month 17, spend $672 a month less (ours)."
+    assert lines[cautious + 1] == "Counting the loan ending in month 17, spend $672 a month less (our estimate)."
     plain = plan_text.goal_lines(design(), goal(dl=deadline(counts_loan_end=False)))
     assert not any("Counting the loan" in line for line in plain)
 
 
 def test_new_copy_27_on_pace_form():
     counted = deadline(counts_loan_end=True, payoff_month=17, cut_with_loan=0.0, on_pace_with_loan=True)
-    assert plan_text.goal_lines(design(), goal(dl=counted))[-1] == "Counting the loan ending in month 17, the current pace is enough (ours)."
+    assert plan_text.goal_lines(design(), goal(dl=counted))[-1] == "Counting the loan ending in month 17, the current pace is enough (our estimate)."
 
 
 def test_loan_line_loan_never_and_loan_over_lines():
     reaches = (reach("actual", "reached", 22, plain="reached", plain_month=31), reach("judges", "reached", 115, plain="never", plain_month=None),
                reach("lean", "over_cap", None, plain="never", plain_month=None))
     lines = plan_text.goal_lines(design(rates=with_loan(a_loan(payoff_month=9))), goal(reaches=reaches))
-    assert lines == ["Actual change, last 12 months (ours): 31 months; 22 counting the loan ending in month 9 (ours).",
-                     "Typical money in minus typical spending: never at this rate; 115 months counting the loan ending in month 9 (ours).",
-                     "Spending at its lean months (ours): never at this rate, and more than 120 months counting the loan ending in month 9 (ours)."]
+    assert lines == ["Actual change, last 12 months (our estimate): 31 months; 22 counting the loan ending in month 9 (our estimate).",
+                     "Typical money in minus typical spending: never at this rate; 115 months counting the loan ending in month 9 (our estimate).",
+                     "Saving at lean-month spending (our estimate): never at this rate, and more than 120 months counting the loan ending in month 9 (our estimate)."]
 
 
 def test_loan_lines_are_singular_when_one_month_and_silent_without_a_loan_difference():
     reaches = (reach("actual", "reached", 1, plain="reached", plain_month=2), reach("judges", "reached", 5), reach("lean", "never", None))
     lines = plan_text.goal_lines(design(rates=with_loan(a_loan(payoff_month=1))), goal(reaches=reaches))
-    assert lines[0].endswith("2 months; 1 counting the loan ending in month 1 (ours).")
+    assert lines[0].endswith("2 months; 1 counting the loan ending in month 1 (our estimate).")
     assert lines[1] == "Typical money in minus typical spending: 5 months."
     never_then_one = replace(reaches[0], state_no_loan="never", month_no_loan=None)
     assert plan_text.goal_lines(design(rates=with_loan(a_loan())), goal(reaches=(never_then_one,) + reaches[1:]))[0].startswith(
-        "Actual change, last 12 months (ours): never at this rate; 1 month counting")
+        "Actual change, last 12 months (our estimate): never at this rate; 1 month counting")
 
 
 def test_loan_end_difference_without_a_loan_is_not_printed():
     reaches = (reach("actual", "reached", 22, plain="reached", plain_month=31),) + three()[1:]
-    assert plan_text.goal_lines(design(rates=with_loan(None)), goal(reaches=reaches))[0] == "Actual change, last 12 months (ours): 22 months."
+    assert plan_text.goal_lines(design(rates=with_loan(None)), goal(reaches=reaches))[0] == "Actual change, last 12 months (our estimate): 22 months."
 
 
 def test_cut_to_start_for_a_rate_at_or_below_zero():
     reaches = (reach("actual", "never", None, cut_to_start=747.89, cut_to_reach=1247.0), ) + three()[1:]
     lines = plan_text.goal_lines(design(), goal(reaches=reaches))
-    assert lines[3] == "Actual change, last 12 months (ours): Saving starts with spending $748 a month less. $1,247 a month less would reach it in 120 months."
+    assert lines[3] == "Actual change, last 12 months (our estimate): Saving starts with spending $748 a month less. $1,247 a month less would reach it in 120 months."
 
 
 def test_interest_and_other_facts_in_fact_lines():
     facts = [Fact("interest_applied", ""), Fact("no_fund_target", ""), Fact("no_buffer", ""), Fact("data_stops_early", ""), Fact("rates_disagree", ""),
              Fact("pension_time_off", ""), Fact("loan_scheduled_only", ""), Fact("loan_not_in_spending", "")]
     lines = plan_text.fact_lines(design(facts=facts, interest=4.5))
-    assert "Includes 4.5% a year interest (ours)." in lines
+    assert "Includes 4.5% a year interest (our estimate)." in lines
     assert "Not enough regular spending to set an emergency fund, so goals count from $0." in lines
     assert "Data stops in 2025-12, so month 1 is the month after." in lines
     assert P.r_note in lines and P.pension_time_off in lines and P.no_buffer in lines
@@ -230,7 +230,7 @@ def test_interest_and_other_facts_in_fact_lines():
 
 
 def test_interest_whole_number_has_no_decimal():
-    assert plan_text.fact_lines(design(facts=[Fact("interest_applied", "")], interest=5.0)) == ["Includes 5% a year interest (ours)."]
+    assert plan_text.fact_lines(design(facts=[Fact("interest_applied", "")], interest=5.0)) == ["Includes 5% a year interest (our estimate)."]
 
 
 # --- loan lines -------------------------------------------------------------------------------------------------------
@@ -245,8 +245,8 @@ def test_loan_d_for_status_d_and_nothing_without_a_loan():
 def test_d12_line_for_the_judges_rate_on_a_recent_loan():
     loan = a_loan(payment=2956.31, payoff_month=42, in_typical_spending=False, bump_judges=0.0)
     assert plan_text.loan_lines(design(rates=with_loan(loan))) == [
-        "The loan payment of $2,956 a month isn't in the judges' typical spending yet, because the loan started recently, "
-        "so the judges' figure doesn't rise when it ends in month 42 (ours)."]
+        "The loan payment of $2,956 a month isn't in the standard (judges') typical spending yet, because the loan started recently, "
+        "so the standard (judges') figure doesn't rise when it ends in month 42 (our estimate)."]
 
 
 # --- time off ---------------------------------------------------------------------------------------------------------
@@ -262,8 +262,8 @@ def time_off(checks, months_off=24, reaches=None):
 def test_time_off_amount_and_runs_out_from_month_zero():
     checks = tuple(check(k, "runs_out", 3, 0, True) for k in RATE_KEYS)
     lines = plan_text.time_off_lines(design(time_off=time_off(checks, reaches=three(state="never", month=None))))
-    assert lines[0] == "24 months off at typical spending: $12,346. At lean spending: $7,654 (ours)."
-    assert lines[1] == "Actual change, last 12 months (ours): never at this rate."
+    assert lines[0] == "24 months off at typical spending: $12,346. At lean spending: $7,654 (our estimate)."
+    assert lines[1] == "Actual change, last 12 months (our estimate): never at this rate."
     assert lines[4:] == ["Not saved by month 120, so this checks starting now.",
                          "With no income for 24 months from month 0, the money runs out in month 3 of the time off."]
 
@@ -278,9 +278,9 @@ def test_time_off_makes_it_and_one_month_off():
 def test_time_off_checks_that_differ_name_their_rate():
     checks = (check("actual", "makes_it", None, 18), check("judges", "runs_out", 5, 40), check("lean", "makes_it", None, 18))
     lines = plan_text.time_off_lines(design(time_off=time_off(checks)))
-    assert lines[-3:] == ["Actual change, last 12 months (ours): With no income for 24 months from month 18, the money lasts. They make it.",
+    assert lines[-3:] == ["Actual change, last 12 months (our estimate): With no income for 24 months from month 18, the money lasts. They make it.",
                           "Typical money in minus typical spending: With no income for 24 months from month 40, the money runs out in month 5 of the time off.",
-                          "Spending at its lean months (ours): With no income for 24 months from month 18, the money lasts. They make it."]
+                          "Saving at lean-month spending (our estimate): With no income for 24 months from month 18, the money lasts. They make it."]
 
 
 def test_time_off_with_no_buffer_and_with_a_loan_inside():
@@ -288,7 +288,7 @@ def test_time_off_with_no_buffer_and_with_a_loan_inside():
     assert plan_text.time_off_lines(design(time_off=time_off(zero)))[-1] == "With no income for 24 months from month 0, there is no money before month 1."
     counted = tuple(check(k, "makes_it", None, 0, True, counts=True) for k in RATE_KEYS)
     lines = plan_text.time_off_lines(design(rates=with_loan(a_loan(payoff_month=9)), time_off=time_off(counted)))
-    assert lines[-1] == "This counts the loan ending in month 9 (ours)."
+    assert lines[-1] == "This counts the loan ending in month 9 (our estimate)."
 
 
 def test_no_time_off_no_lines():
@@ -313,7 +313,7 @@ def test_emergency_covered_zero_and_negative_balance():
     assert plan_text.emergency_lines(design(emergency=emergency())) == ["The buffer covers it: $7,612 is left."]
     assert plan_text.emergency_lines(design(emergency=emergency(cost=0.0))) == ["The cost is $0, so the buffer is unchanged."]
     negative = emergency(before=-2513.0, left=-12513.0, covered=False, backup=FakeBackup())
-    assert plan_text.emergency_lines(design(emergency=negative))[0] == "The balance was already -$2,513, so the cost isn't what empties the buffer."
+    assert plan_text.emergency_lines(design(emergency=negative))[0] == "The buffer (average balance over the last 6 months) was already -$2,513, so the cost isn't what empties the buffer."
     assert plan_text.emergency_lines(design()) == []
 
 
@@ -323,10 +323,10 @@ def test_emergency_that_the_buffer_cannot_cover_lists_the_budget_and_the_rebuild
     assert lines == [
         "The buffer can't cover it: -$12,513 left.",
         "Do this first, in order:", "1. Find $12,513 to get back to $0.", "2. Cut other spending.",
-        "Lean budget: $1,346 a month, $900 fixed and $446 other (ours).",
-        "Actual change, last 12 months (ours): back to $487 in 4 months, emergency fund in 9 months.",
+        "Lean budget: $1,346 a month, $900 fixed and $446 other (our estimate).",
+        "Actual change, last 12 months (our estimate): back to $487 in 4 months, emergency fund in 9 months.",
         "Typical money in minus typical spending: back to $487 in 4 months, emergency fund in 9 months.",
-        "Spending at its lean months (ours): back to $487 in 4 months, emergency fund in 9 months."]
+        "Saving at lean-month spending (our estimate): back to $487 in 4 months, emergency fund in 9 months."]
 
 
 def test_rebuild_singular_never_over_cap_and_no_fund_target():
@@ -335,9 +335,9 @@ def test_rebuild_singular_never_over_cap_and_no_fund_target():
                Rebuild("lean", reach("lean", "over_cap", None), None))
     e = emergency(before=500.0, left=-9500.0, covered=False, rebuild=rebuild)
     lines = plan_text.emergency_lines(design(emergency=e))[-3:]
-    assert lines == ["Actual change, last 12 months (ours): back to $500 in 1 month, emergency fund in 1 month.",
+    assert lines == ["Actual change, last 12 months (our estimate): back to $500 in 1 month, emergency fund in 1 month.",
                      "Typical money in minus typical spending: back to $500 never at this rate, emergency fund in more than 120 months.",
-                     "Spending at its lean months (ours): back to $500 in more than 120 months."]
+                     "Saving at lean-month spending (our estimate): back to $500 in more than 120 months."]
 
 
 def test_emergency_split_names_the_wallet_in_progress_then_the_fund(monkeypatch):

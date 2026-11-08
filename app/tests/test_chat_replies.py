@@ -62,7 +62,7 @@ def test_ac5_no_buffer_account_says_the_balance_was_already_negative_and_never_b
     s = flow.step(s, TwistPicked(s.turn, "repair"))
     s = flow.step(s, flow.live(s).options[0].event)
     lines = flow.live(s).lines
-    assert lines[1] == "✕ The balance was already -$2,513 before this, so runway is 0 months whatever the shock."
+    assert lines[1] == "✕ The buffer (average balance over the last 6 months) was already -$2,513 before this, so runway is 0 months whatever the shock."
     assert not any("one-off cost" in line for line in lines)
     assert s.outputs[0].verdict_case == "runway_zero" and "no_buffer_before_shock" in s.outputs[0].fact_codes
     assert [o.key for o in flow.live(s).options][0] == "backup"
@@ -103,11 +103,11 @@ def test_the_ours_line_appears_only_when_standing_orders_apply_and_ends_with_our
     assert r.bills_on_standing_orders.applies
     lines = replies.result_lines(r, get_profile(with_orders))
     row = text.orders_row(r)
-    assert lines[-1] == f"{row.label}: {row.value} ({row.counterpart}) (ours)" and lines[-1].endswith("(ours)")
-    assert sum(line.endswith("(ours)") for line in lines) == 1
+    assert lines[-1] == f"{row.label} (our estimate): {row.value} ({row.counterpart})" and lines[-1].count("(our estimate)") == 1
+    assert sum("(our estimate)" in line for line in lines) == 1
     r2 = apply_shock(without, shock)
     assert not r2.bills_on_standing_orders.applies
-    assert not any("(ours)" in line for line in replies.result_lines(r2, get_profile(without)))
+    assert not any("(our estimate)" in line for line in replies.result_lines(r2, get_profile(without)))
     assert text.orders_row(r2).value == "n/a"
 
 
@@ -209,7 +209,7 @@ def test_sweep_every_account_by_every_preset_through_the_buttons():
             assert lines[0] == T.engine_call.format(call=s.outputs[0].call), (account, preset.key)
             body = lines[1:]
             if r.bills_on_standing_orders.applies:
-                assert body.pop().endswith("(ours)"), (account, preset.key)
+                assert "(our estimate):" in body.pop(), (account, preset.key)
             assert body == expected, (account, preset.key)
             out = s.outputs[0]
             assert out.shock == preset.shock and out.through_months == months and out.account_id == account, (account, preset.key)

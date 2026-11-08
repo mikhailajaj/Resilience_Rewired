@@ -64,7 +64,7 @@ def customer_questions(p, flows, record):
     if gap > 0 and actual > -0.5 * gap:
         add("gap_vs_actual", "Spending and bills", "Typical months and actual balance changes disagree for this customer. Which should a real plan be based on?",
             f"Typical spending is {money(gap)} above typical money in, but the balance actually changed by {signed_money(actual)} a month over the last 12 months.",
-            "The size of the cut the plan asks for. The judges' formula stays as defined either way.")
+            "The size of the cut the plan asks for. The standard (judges') formula stays as defined either way.")
     if p.gap < 0 and actual <= 0:
         add("surplus_not_kept", "Spending and bills", "Where does this customer's apparent surplus go?",
             f"Typical money in is {money(-gap)} above typical spending, but the balance changed by {signed_money(actual)} a month over the last 12 months.",
@@ -90,7 +90,7 @@ def customer_questions(p, flows, record):
     if p.B > 1.25 * max(p.latest_balance, 1):
         add("buffer_vs_latest", "Balance and buffer", "Which balance should a real plan start from: the 6-month average or the latest balance?",
             f"The buffer is {money(p.B)}, but the balance ended {p.last_month} at {money(p.latest_balance)}.",
-            "How long the money really lasts. The judges' runway keeps using the average.")
+            "How long the money really lasts. The standard (judges') runway keeps using the average.")
     if "no_buffer" in warning:
         add("no_buffer", "Balance and buffer", "What can the bank offer a customer who starts with no buffer?",
             f"The buffer is {money(p.B)}, so runway is 0 months whatever the shock.",

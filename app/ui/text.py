@@ -38,7 +38,7 @@ def _note_text(warning, p):
         "little_activity": "Almost no activity on this account. Most numbers are $0.",
         "irregular_income": "No regular money in. A lower income changes nothing here.",
         "irregular_spending": "No regular spending recorded. Buffer in months of spending can't be worked out.",
-        "no_buffer": "The balance is at or below zero, so runway is 0 months.",
+        "no_buffer": "The buffer (average balance over the last 6 months) is at or below $0, so runway is 0 months.",
         "out_of_date": f"Data stops in {month_label(p.last_month)}. Figures are as of then.",
         "pension_income": "Pension income: a layoff wouldn't stop this.",
         "cash_income": "Income is cash deposits. The data can't show which are pay.",
@@ -65,11 +65,11 @@ def notes(p):
 def summary_line(p):
     who = f"Customer {p.account_id}"
     if p.B <= 0:
-        return f"{who} has no buffer to draw on: the balance is {money(p.B)}. Runway is 0 months."
+        return f"{who} has no buffer to draw on: the buffer (average balance over the last 6 months) is {money(p.B)}. Runway is 0 months."
     if p.runway.state == "no_shortfall":
         if p.I == 0 and p.S == 0:
             return f"{who} has almost no activity: typical money in and spending are both $0. The buffer is {money(p.B)}."
-        return f"{who} brings in about {money(p.I)} and spends about {money(p.S)}, so money isn't running down. The buffer is {money(p.B)}."
+        return f"{who} brings in about {money(p.I)} a month and spends about {money(p.S)} in a typical month, so typical months show no shortfall. The buffer is {money(p.B)}."
     if p.I == 0:
         return f"{who} has no regular money in and spends about {money(p.S)} a month. The buffer is {money(p.B)}, so it would last {runway_words(p.runway)}."
     if p.runway.months is not None and p.runway.months >= 120:
@@ -104,12 +104,12 @@ def verdict(r):
     cut = r.shock.income_cut
     pct = number(round(cut.keep_fraction * 100, 2)) if cut else None
     d = r.duration
-    second = f"The judges' runway is {runway_words(r.runway)}." if d is not None else None
+    second = f"The standard (judges') runway is {runway_words(r.runway)}." if d is not None else None
     if case == "no_shock":
         return Verdict("neutral", "No shock applied. Pick a twist to see what changes.")
     if case == "runway_zero":
         if "no_buffer_before_shock" in codes:
-            return Verdict("bad", f"The balance was already {money(r.before.buffer)} before this, so runway is 0 months whatever the shock.", second)
+            return Verdict("bad", f"The buffer (average balance over the last 6 months) was already {money(r.before.buffer)} before this, so runway is 0 months whatever the shock.", second)
         if abs(r.buffer_left) < 0.5:
             return Verdict("bad", f"The one-off cost of {money(r.one_off)} uses up the whole buffer of {money(r.before.buffer)}. Nothing is left to live on.", second)
         return Verdict("bad", f"The one-off cost of {money(r.one_off)} is bigger than the buffer of {money(r.before.buffer)}. Nothing is left to live on.", second)
@@ -138,8 +138,8 @@ def fact_lines(r, p):
     text = {
         "layoff_doesnt_fit_pension": "Pension income: a layoff wouldn't stop this. The numbers apply the layoff as asked.",
         "income_cut_no_income": "No regular money in, so a lower income changes nothing here.",
-        "bills_shock_no_bills": "No regular bills visible, so the judges' formula changes nothing for this.",
-        "bills_shock_too_small": "Standing orders show more bills than the judges' figure, so this rise is understated.",
+        "bills_shock_no_bills": "No regular bills visible, so the standard (judges') formula changes nothing for this.",
+        "bills_shock_too_small": "Standing orders show more bills than the standard (judges') figure, so this rise is understated.",
         "one_off_zero_spending": "No typical spending, so a cost in months of spending is $0. Type dollars instead.",
         "data_stops_early": f"Data stops in {month_label(p.last_month)}.",
         "little_activity": "Almost no activity, so most numbers are $0.",
@@ -209,21 +209,21 @@ def _capped_line(c, backup):
 
 
 def orders_row(r):
-    judges = f"judges': {r.runway.label}"
+    judges = f"standard (judges'): {r.runway.label}"
     orders = r.bills_on_standing_orders
     if orders.applies:
-        return OurRow("Bills on standing orders", orders.runway.label, judges, (
+        return OurRow("Runway with bills from standing orders", orders.runway.label, judges, (
             "Runway if the rise applies to monthly bills set up as standing orders. Some bills don't show in typical bills, so this base can be larger.",))
     return OurRow("Bills on standing orders", "n/a", None, (REASONS.get(orders.reason, orders.note),))
 
 
 def our_rows(r, p, plan):
-    judges = f"judges': {r.runway.label}"
+    judges = f"standard (judges'): {r.runway.label}"
     rows = []
     adjust = r.if_you_adjust
     if adjust.applies:
         rows.append(OurRow("Runway, if you adjust", adjust.runway.label, judges, (
-            "An illustration, not a forecast. In some accounts in the data, spending fell when income fell. This lowers spending that way. The judges' runway keeps spending flat.",)))
+            "An illustration, not a forecast. In some accounts in the data, spending fell when income fell. This lowers spending that way. The standard (judges') runway keeps spending flat.",)))
     else:
         rows.append(OurRow("Runway, if you adjust", "n/a", None, (REASONS.get(adjust.reason, adjust.note),)))
     capped = r.ei_capped
@@ -234,13 +234,13 @@ def our_rows(r, p, plan):
             lines.append(line)
         rows.append(OurRow("Runway with EI weekly maximum", capped.runway.label, judges, tuple(lines)))
     rows.append(orders_row(r))
-    rows.append(OurRow("Current fixed costs", f"{money(p.current_fixed_costs)} a month", f"judges' F: {money(p.F)}", (
+    rows.append(OurRow("Current fixed costs", f"{money(p.current_fixed_costs)} a month", f"standard (judges') F: {money(p.F)}", (
         "Bills, insurance and the loan payment if still running.",)))
     rows.append(OurRow("Buffer in months of spending", "n/a" if p.buffer_months is None else f"{p.buffer_months:.1f} months", None, (
         "Buffer divided by typical spending. Shows savings without how much money passes through."
         if p.buffer_months is not None else "There is no buffer or no typical spending to divide by.",)))
     rows.append(OurRow("Lowest balance, last 6 months", money(p.lowest_balance), None, ("The lowest the balance got. An average can hide it.",)))
-    rows.append(OurRow("Latest balance", money(p.latest_balance), f"judges' buffer: {money(p.B)}", (
+    rows.append(OurRow("Latest balance", money(p.latest_balance), f"standard (judges') buffer: {money(p.B)}", (
         f"The balance at the end of {p.last_month}. The buffer is an average over 6 months, so the two can differ.",)))
     rows.append(OurRow("Actual change, last 12 months", f"{signed_money(plan.goal.actual_change_last_12)} a month", f"typical month: {signed_money(p.I - p.S)}", (
         "What the balance really did, on average. Typical money in minus typical spending can differ, because each is a separate median.",)))
@@ -250,7 +250,7 @@ def our_rows(r, p, plan):
 # --- Plans (F, G) ---------------------------------------------------------------------------------------------------
 
 def _judges_goal_lines(g):
-    """The judges' sentence for the goal at I - S (the flat GoalPlan fields)."""
+    """The standard (judges') sentence for the goal at I - S (the flat GoalPlan fields)."""
     if g.state == "on_track":
         start = f"To have {months_word(g.target_months)} of spending (**{money(g.target_amount)}**) saved, set aside **{money(g.monthly_amount)} a month**."
         if g.months_to_goal > 120:
@@ -272,12 +272,12 @@ def _judges_goal_lines(g):
 
 
 def _headline_goal_line(g, h):
-    """NEW-COPY-20: the goal at the actual change over the last 12 months (ours)."""
+    """NEW-COPY-20: the goal at the actual change over the last 12 months (our estimate)."""
     if h.state == "on_track":
         n = "more than 120 months" if h.months_to_goal > 120 else months_word(h.months_to_goal)
-        return (f"At the actual change over the last 12 months ({money(h.monthly)} a month, ours), "
+        return (f"At the actual change over the last 12 months ({money(h.monthly)} a month, our estimate), "
                 f"{months_word(g.target_months)} of spending ({money(g.target_amount)}) takes {n} to save.")
-    line = f"Over the last 12 months the balance changed by {money(h.monthly)} a month (ours), so at that pace the fund isn't reached."
+    line = f"Over the last 12 months the balance changed by {money(h.monthly)} a month (our estimate), so at that pace the fund isn't reached."
     if h.cut_to_break_even is not None and h.cut_to_break_even >= 1:
         line += f" Saving starts with spending {money(h.cut_to_break_even)} a month less."
     return line
@@ -296,7 +296,7 @@ def goal_lines(plan):
         if g.headline is not None:
             lines.append(_headline_goal_line(g, g.headline))
             judges = _judges_goal_lines(g)
-            judges[0] = f"On the judges' typical month ({money(g.surplus)} a month): {judges[0]}"
+            judges[0] = f"On the standard (judges') typical month ({money(g.surplus)} a month): {judges[0]}"
             lines.extend(judges)
         else:
             lines.extend(_judges_goal_lines(g))
@@ -305,7 +305,7 @@ def goal_lines(plan):
     if any(f.code == "balance_rose_despite_gap" for f in plan.facts):
         lines.append(f"Typical spending is {money(-g.surplus)} above typical money in, but over the last 12 months the balance rose {money(g.actual_change_last_12)} a month on average. Typical months can overstate the gap, so the cut needed may be smaller.")
     if low is not None:
-        lines.append(f"Keep the lowest balance above one loan payment ({money(low.payment)}). It is now {money(low.lowest_balance)}.")
+        lines.append(f"Keep the balance above one loan payment ({money(low.payment)}) at all times. Its lowest point in the last 6 months was {money(low.lowest_balance)}.")
     return lines
 
 
@@ -319,7 +319,7 @@ def _backup_core(plan):
     if b.state == "no_cuts_needed":
         return [f"No cuts needed: the buffer lasts the full {months_word(n)}." if n else "No cuts needed: income still covers spending."]
     context = [f"Spending above fixed costs: {money(b.flexible_spending)} a month.",
-               f"Fixed costs, including bills added by the shock: {money(b.fixed_costs)} a month."]
+               f"Current fixed costs, plus the bills rise: {money(b.fixed_costs)} a month."]
     if b.state == "cuts_not_enough":
         return [f"Even with all other spending cut, the buffer lasts **{runway_words(b.runway_if_all_flexible_cut)}**, short of {months_word(n)}.", *context]
     if b.cut_to_last is not None:
@@ -360,11 +360,11 @@ FOOTER = ("Data: PKDD'99 Discovery Challenge Financial dataset, from the CTU Rel
           "Method notes are in the docs folder.")   # R2: NEW-COPY-24
 
 
-LOAN_BACKUP = "Counting the loan ending in month {N}, the monthly gap falls by {payment} from then (ours)."       # copy §7 P.loan_backup
-LOAN_BACKUP_OK = "With that, they make it (ours)."
-LOAN_BACKUP_OUT = "They still run out in month {m} (ours)."
-LOAN_NOT_IN_SPENDING = ("The loan payment of {P} a month isn't in the judges' typical spending yet, because the loan started recently, "
-                        "so the judges' figure doesn't rise when it ends in month {N} (ours).")                 # NEW-COPY-22
+LOAN_BACKUP = "Counting the loan ending in month {N}, the monthly gap falls by {payment} from then (our estimate)."       # copy §7 P.loan_backup
+LOAN_BACKUP_OK = "With that, they make it (our estimate)."
+LOAN_BACKUP_OUT = "They still run out in month {m} (our estimate)."
+LOAN_NOT_IN_SPENDING = ("The loan payment of {P} a month isn't in the standard (judges') typical spending yet, because the loan started recently, "
+                        "so the standard (judges') figure doesn't rise when it ends in month {N} (our estimate).")                 # NEW-COPY-22
 LOAN_SCHEDULED_ONLY = "The loan is behind, so month {N} is the scheduled end, not a certain one."                # P.loan_d
 
 

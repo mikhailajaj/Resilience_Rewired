@@ -26,9 +26,9 @@ def test_findings_page_shows_head_sentence_and_tiers_with_no_customer(monkeypatc
     at = AppTest.from_file(APP, default_timeout=120).run()
     at.switch_page("app_pages/findings.py").run()
     assert not at.exception
-    assert [m.label.replace("\\$", "$") for m in at.metric] == ["Real income drops", "Spending kept, median", "Below $0 after 3 months"]
+    assert [m.label.replace("\\$", "$") for m in at.metric] == ["Real income drops", "Spending kept, median", "Below $0 after 3 months: formula vs real"]
     values = [m.value for m in at.metric]
-    assert values == ["735", "50%", "31 of 493 predicted"]
+    assert values == ["735", "50%", "493 predicted, 31 real"]
     body = text(at)
     assert "Biggest finding: spending doesn't stay flat after a shock" in body
     assert "31 were below $0 after 3 months where the formula said 493" in body

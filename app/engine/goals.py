@@ -103,7 +103,7 @@ class TimeOffResult:
     time_off: TimeOff
     position: int
     amount: float                 # months_off * S (P.o_amount)
-    lean_amount: float            # months_off * lean_spending (ours)
+    lean_amount: float            # months_off * lean_spending (our estimate)
     reach: tuple[Reach, Reach, Reach]     # saved when the balance >= fund + amount
     checks: tuple[TimeOffCheck, TimeOffCheck, TimeOffCheck]
 
@@ -357,13 +357,13 @@ def _facts(p, rates, request, fund_target):
     if end is not None and end.scheduled_only:
         out.append(Fact("loan_scheduled_only", f"The loan is behind, so month {end.payoff_month} is the scheduled end, not a certain one."))
     if end is not None and not end.in_typical_spending:
-        out.append(Fact("loan_not_in_spending", f"The loan payment of {money(end.payment)} a month isn't in the judges' typical spending yet, so the judges' figure doesn't rise when it ends."))
+        out.append(Fact("loan_not_in_spending", f"The loan payment of {money(end.payment)} a month isn't in the standard (judges') typical spending yet, so the standard (judges') figure doesn't rise when it ends."))
     if request.interest_pct > 0:
-        out.append(Fact("interest_applied", f"Includes {request.interest_pct:g}% a year interest (ours)."))
+        out.append(Fact("interest_applied", f"Includes {request.interest_pct:g}% a year interest (our estimate)."))
     if p.income_type == "Pension" and any(isinstance(x, TimeOff) for x in request.items):
         out.append(Fact("pension_time_off", "Pension income: time off work wouldn't stop it. The check still assumes no income."))
     if (rates.actual.monthly > 0) != (rates.judges.monthly > 0):
-        out.append(Fact("rates_disagree", "The actual change and the judges' typical figures point different ways, because typical months come from different months."))
+        out.append(Fact("rates_disagree", "The actual change and the standard (judges') typical figures point different ways, because typical months come from different months."))
     return tuple(out)
 
 

@@ -1,4 +1,4 @@
-"""The judges' numbers never change (R18, R15). An independent oracle, transliterated from the README's "How judges calculate the numbers".
+"""The standard (judges') numbers never change (R18, R15). An independent oracle, transliterated from the README's "How judges calculate the numbers".
 
 It reads the raw CSVs with `csv` and `statistics.median` and imports nothing from app.engine.data, formulas or profile. It checks
 I, F, S, B, H and P and the before-runway label on every account, then 13 shocks through apply_shock, with 0 mismatches allowed.

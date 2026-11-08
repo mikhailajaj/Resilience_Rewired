@@ -1,4 +1,4 @@
-"""Our monthly saving rates and a running loan's scheduled end. Beside the judges' numbers, never in place of them (ADR 0006, ADR 0007)."""
+"""Our monthly saving rates and a running loan's scheduled end. Beside the standard (judges') numbers, never in place of them (ADR 0006, ADR 0007)."""
 import math
 from dataclasses import dataclass, replace
 from functools import lru_cache

@@ -74,7 +74,7 @@ def test_f3_to_f6_account_findings_match_the_notebooks():
 
 def test_view_texts_contain_the_figures():
     f, a = biggest_finding(), account_findings()
-    assert view.numbers(f) == [("Real income drops", "735"), ("Spending kept, median", "50%"), ("Below $0 after 3 months", "31 of 493 predicted")]
+    assert view.numbers(f) == [("Real income drops", "735"), ("Spending kept, median", "50%"), ("Below $0 after 3 months: formula vs real", "493 predicted, 31 real")]
     line = view.lines(f)[0]
     assert "In 735 real drops" in line and "median of 50%" in line and "31 were below $0 after 3 months where the formula said 493" in line
     assert view.tier_rows(f) == [("Under 2 months", "410", "37%"), ("2 to 6 months", "219", "71%"), ("6 or more months", "106", "247%")]

@@ -12,9 +12,9 @@ class P:
     "{n} months" rows follow NEW-COPY-9, so WP-T adds singular forms beside them where n can be 1."""
     head = "Plan designer"
     cap = "Before any shock. Tick a plan to open it."
-    r_actual = "Actual change, last 12 months (ours)"
+    r_actual = "Actual change, last 12 months (our estimate)"
     r_judges = "Typical money in minus typical spending"
-    r_lean = "Spending at its lean months (ours)"
+    r_lean = "Saving at lean-month spending (our estimate)"
     r_note = "Typical months come from different months, so they don't add up. The actual change is the headline."
     t_goal = "Savings goal"
     t_off = "Time off work"
@@ -39,22 +39,22 @@ class P:
     g_cut_over = "That is more than the {flex} above fixed costs, so cuts alone can't reach it by then."
     g_cut_start = "Saving starts with spending {break_even} a month less. {reach} a month less would reach it in 120 months."
     g_fund_first = "This includes finishing the emergency fund first."
-    g_cut_loan = "Counting the loan ending in month {N}, spend {cut_with_loan} a month less (ours)."        # NEW-COPY-27
-    g_on_pace_loan = "Counting the loan ending in month {N}, the current pace is enough (ours)."          # NEW-COPY-27
-    interest = "Includes {interest_pct}% a year interest (ours)."
+    g_cut_loan = "Counting the loan ending in month {N}, spend {cut_with_loan} a month less (our estimate)."        # NEW-COPY-27
+    g_on_pace_loan = "Counting the loan ending in month {N}, the current pace is enough (our estimate)."          # NEW-COPY-27
+    interest = "Includes {interest_pct}% a year interest (our estimate)."
     no_fund = "Not enough regular spending to set an emergency fund, so goals count from $0."
     month_one = "Data stops in {last_month}, so month 1 is the month after."
     no_shock_used = "The shock above isn't used here."
-    o_amount = "{months_off} months off at typical spending: {amount}. At lean spending: {lean_amount} (ours)."
+    o_amount = "{months_off} months off at typical spending: {amount}. At lean spending: {lean_amount} (our estimate)."
     o_ok = "With no income for {months_off} months from month {start}, the money lasts. They make it."
     o_out = "With no income for {months_off} months from month {start}, the money runs out in month {m} of the time off."
     o_now = "Not saved by month 120, so this checks starting now."
     e_left_ok = "The buffer covers it: {left} is left."
     e_left_no = "The buffer can't cover it: {left} left."
     e_zero = "The cost is $0, so the buffer is unchanged."
-    e_neg = "The balance was already {B}, so the cost isn't what empties the buffer."                    # NEW-COPY-29
+    e_neg = "The buffer (average balance over the last 6 months) was already {B}, so the cost isn't what empties the buffer."                    # NEW-COPY-29
     e_budget = "Do this first, in order:"
-    e_lean = "Lean budget: {lean} a month, {fixed} fixed and {other} other (ours)."
+    e_lean = "Lean budget: {lean} a month, {fixed} fixed and {other} other (our estimate)."
     e_rebuild = "{rate}: back to {buffer} in {n} months, emergency fund in {m} months."
     tl_head = "Balance by month, one line per rate"
     tl_table = "Show as a table"
@@ -67,14 +67,14 @@ class P:
     m_time_off_end = "Time off ends"
     m_emergency_cost = "Emergency cost"
     m_loan_paid_off = "Loan paid off"
-    loan_line = "{n} months; {n_loan} counting the loan ending in month {N} (ours)."
-    loan_never = "never at this rate; {n_loan} months counting the loan ending in month {N} (ours)."
-    loan_over = "never at this rate, and more than 120 months counting the loan ending in month {N} (ours)."   # NEW-COPY-26
+    loan_line = "{n} months; {n_loan} counting the loan ending in month {N} (our estimate)."
+    loan_never = "never at this rate; {n_loan} months counting the loan ending in month {N} (our estimate)."
+    loan_over = "never at this rate, and more than 120 months counting the loan ending in month {N} (our estimate)."   # NEW-COPY-26
     loan_d = "The loan is behind, so month {N} is the scheduled end, not a certain one."
-    loan_not_in_spending = ("The loan payment of {P} a month isn't in the judges' typical spending yet, because the loan started recently, "
-                            "so the judges' figure doesn't rise when it ends in month {N} (ours).")                     # NEW-COPY-22
+    loan_not_in_spending = ("The loan payment of {P} a month isn't in the standard (judges') typical spending yet, because the loan started recently, "
+                            "so the standard (judges') figure doesn't rise when it ends in month {N} (our estimate).")                     # NEW-COPY-22
     after_cap = "After month 120: {events}."                                                              # NEW-COPY-28
-    w_head = "Wallets (ours)"                                                                             # NEW-COPY-30
+    w_head = "Wallets (our estimate)"                                                                             # NEW-COPY-30
     w_row = "{item}: {amount} of {target}"
     w_fund = "Emergency fund"
     w_time_off = "Time off"
@@ -90,15 +90,15 @@ class P:
     loan_backup_ok = text.LOAN_BACKUP_OK
     loan_backup_out = text.LOAN_BACKUP_OUT
     # New wording (not yet in copy §11; the copy owner files it):
-    g_months_never_over = "more than 120 months; {n_loan} counting the loan ending in month {N} (ours)."
+    g_months_never_over = "more than 120 months; {n_loan} counting the loan ending in month {N} (our estimate)."
     g_cut_plain = "That needs {cut} a month less spending."
     o_out_zero = "With no income for {months_off} months from month {start}, there is no money before month 1."
-    o_loan = "This counts the loan ending in month {N} (ours)."
+    o_loan = "This counts the loan ending in month {N} (our estimate)."
     item_time_off = "time off"
     w_negative_state = "below $0 before the loan ends"
     w_below_zero = "below $0"
     pension_time_off = "Pension income: time off wouldn't stop it. The check still uses no income, as asked."
-    no_buffer = "The balance is at or below $0, so saving starts by getting back to $0."
+    no_buffer = "The buffer (average balance over the last 6 months) is at or below $0, so saving starts by getting back to $0."
     tl_no_markers = "none"
     rebuild_never = "never at this rate"
     rebuild_over = "in more than 120 months"
@@ -288,7 +288,7 @@ def emergency_lines(design) -> list[str]:
 
 
 def loan_lines(design) -> list[str]:
-    """P.loan_d for status D, then the D12 line (NEW-COPY-22) where the payment isn't in the judges' typical spending."""
+    """P.loan_d for status D, then the D12 line (NEW-COPY-22) where the payment isn't in the standard (judges') typical spending."""
     loan = design.rates.loan_end
     if loan is None:
         return []

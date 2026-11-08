@@ -62,7 +62,7 @@ def test_layoff_verdict_and_plan_on_20111(app):
     preset(app, "Laid off, EI 55%")
     body = page(app)
     assert "the money runs out in month 4, about 2.6 months short" in body
-    assert "The judges' runway is 3.4 months." in body
+    assert "The standard (judges') runway is 3.4 months." in body
     assert "Selected: Laid off, EI 55%" in body
     assert "spending needs to drop by **$2,178 a month**" in body
 
@@ -154,13 +154,13 @@ def test_hard_accounts_draw_the_whole_page(app):
 def test_negative_buffer_does_not_blame_the_cost(app):
     show(app, 32078)
     preset(app, "Furnace dies")
-    assert "The balance was already -$2,513 before this" in page(app)
+    assert "The buffer (average balance over the last 6 months) was already -$2,513 before this" in page(app)
 
 
 def test_bills_twist_on_account_with_no_bills_says_why(app):
     show(app, 20111)
     preset(app, "Rent or bills up")
-    assert "the judges' formula changes nothing for this" in page(app)
+    assert "the standard (judges') formula changes nothing for this" in page(app)
 
 
 def test_start_month_never_changes_the_numbers(app):
@@ -224,7 +224,7 @@ def test_flow_line_on_20111(app):
 def test_our_numbers_show_latest_balance_and_actual_change(app):
     show(app, 20111)
     html_text = str([h.proto for h in app.get("html")])
-    assert "Latest balance" in html_text and "$10,863" in html_text and "judges&#x27; buffer: $17,612" in html_text
+    assert "Latest balance" in html_text and "$10,863" in html_text and "standard (judges&#x27;) buffer: $17,612" in html_text
     assert "Actual change, last 12 months" in html_text and "-$748 a month" in html_text and "typical month: -$2,260" in html_text
 
 

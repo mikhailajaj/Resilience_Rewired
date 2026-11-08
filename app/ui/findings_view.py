@@ -15,9 +15,9 @@ class F:
     head = "Biggest finding: spending doesn't stay flat after a shock"
     n_events = "Real income drops"
     n_kept = "Spending kept, median"
-    n_below = "Below $0 after {months} months"
-    below_value = "{actual} of {predicted} predicted"
-    line = ("The judges' formula holds spending flat. In {events} real drops in money in, customers kept a median of {pct}% of their usual "
+    n_below = "Below $0 after {months} months: formula vs real"
+    below_value = "{predicted} predicted, {actual} real"
+    line = ("The standard (judges') formula holds spending flat. In {events} real drops in money in, customers kept a median of {pct}% of their usual "
             "spending, so {actual} were below $0 after {months} months where the formula said {predicted}.")
     chart_title = "Spending kept during a real income drop"
     rule = "The formula assumes 100%"

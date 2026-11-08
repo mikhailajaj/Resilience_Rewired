@@ -55,8 +55,8 @@ with who:
     with left:
         st.subheader("Account", anchor=False)
         table(view.account_rows(profile, record), f"Account details for customer {account}.")
-        st.subheader("The judges' numbers", anchor=False)
-        table(view.judges_rows(profile), "The judges' numbers for this customer.")
+        st.subheader("The standard (judges') numbers", anchor=False)
+        table(view.judges_rows(profile), "The standard (judges') numbers for this customer.")
     with right:
         st.subheader("Districts", anchor=False)
         table(view.district_rows(record), "Facts about the customer's home and branch districts.")
